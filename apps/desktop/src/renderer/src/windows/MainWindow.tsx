@@ -1,6 +1,7 @@
 import { useEffect, type JSX } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CodePad } from '../components/CodePad'
+import { CollapsiblePane, usePaneState } from '../components/Collapsible'
 import { Editor } from '../components/Editor'
 import { PythonSetupDialog } from '../components/PythonSetupDialog'
 import { Sidebar } from '../components/Sidebar'
@@ -29,8 +30,16 @@ export function MainWindow(): JSX.Element {
   const compile = useStore((s) => s.compile)
   const saveAll = useStore((s) => s.saveAll)
   const openFiles = useStore((s) => s.openFiles)
+  const { collapsed, toggle } = usePaneState()
   const running = status === 'running'
   const dirty = openFiles.some((f) => f.content !== f.savedContent)
+  const layoutClass = [
+    'workspace',
+    'workspace-main',
+    collapsed.sidebar ? 'sidebar-collapsed' : '',
+    collapsed.codepad ? 'codepad-collapsed' : '',
+    collapsed.terminal ? 'terminal-collapsed' : ''
+  ].join(' ')
 
   useEffect(() => {
     void bootstrap('main')
@@ -75,17 +84,25 @@ export function MainWindow(): JSX.Element {
       ) : !project ? (
         <Welcome />
       ) : (
-        <main className="workspace workspace-main">
-          <Sidebar />
+        <main className={layoutClass}>
+          <section className="pane pane-sidebar">
+            <CollapsiblePane id="sidebar" title={project.name} collapsed={Boolean(collapsed.sidebar)} onToggle={() => toggle('sidebar')} orientation="vertical">
+              <Sidebar />
+            </CollapsiblePane>
+          </section>
           <section className="pane pane-editor">
             <Tabs />
             <Editor />
           </section>
           <section className="pane pane-codepad">
-            <CodePad />
+            <CollapsiblePane id="codepad" title={t('codepad.title')} collapsed={Boolean(collapsed.codepad)} onToggle={() => toggle('codepad')} orientation="vertical">
+              <CodePad />
+            </CollapsiblePane>
           </section>
           <section className="pane pane-terminal">
-            <Terminal />
+            <CollapsiblePane id="terminal" title={t('terminal.title')} collapsed={Boolean(collapsed.terminal)} onToggle={() => toggle('terminal')} orientation="horizontal">
+              <Terminal />
+            </CollapsiblePane>
           </section>
         </main>
       )}

@@ -12,6 +12,8 @@
 
 **M3 – Debugger.** Breakpoints per Klick in die Editor-Gutter, Debugger-Fenster (⌘⇧B) mit Aufrufsequenz, Klassen-/Instanz-/lokalen Variablen (Doppelklick inspiziert), Halt / Step / Step Into / Step Out / Continue / Terminate. Das Fenster öffnet sich automatisch beim Anhalten; die aktuelle Zeile ist im Editor gelb markiert. Solange das Debugger-Fenster offen ist, pausiert *Halt* das laufende Programm statt es abzubrechen.
 
+Kleinigkeiten: Rückgabewerte interaktiver Aufrufe erscheinen zusätzlich im Terminal („→ 60 (int)“); Dateiliste, Code Pad, Terminal und Objektleiste lassen sich über ▾ zu einem Streifen einklappen (Zustand wird pro Fenster gemerkt). **Scope-Highlighting wie in BlueJ**: jeder Block ist ein Kasten hinter dem Text – Klasse grün, Funktion/Methode gelb, Schleife blau, Verzweigung/try/with lila –, der Rumpf heller abgesetzt, verschachtelte Kästen rechts eingerückt (`editor/scopeHighlight.ts`, Farben als `--scope-*` in `styles.css`).
+
 Noch offen: Pyright-Completion, Unit-Test-Aufnahme (M4), Git + Aufgaben-Workflow (M5).
 
 Schnellstart: `pnpm dev` → „Beispiel „bank“ öffnen“ → **Compile** (⌘K) → Fenster *Klassendiagramm* (⌘⇧D) → Rechtsklick auf `Person` → `new Person("Anna")` → Rechtsklick auf `Konto` → `new Konto(person1, 100)` → Rechtsklick auf `konto1` → `einzahlen(50)` → `kontostand()`. Debugger: in `konto.py` links neben `self.stand += betrag` klicken (Breakpoint) → `konto1.einzahlen(5)` → Debugger-Fenster → Step.

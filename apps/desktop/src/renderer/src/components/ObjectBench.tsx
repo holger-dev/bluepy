@@ -14,10 +14,6 @@ export function ObjectBench({ onObjectMenu, onInspect }: Props): JSX.Element {
   const status = useStore((s) => s.backendStatus)
   return (
     <div className="pane-body bench">
-      <div className="pane-title">
-        {t('bench.title')}
-        <span className="muted bench-count">{bench.length > 0 ? t('bench.count', { count: bench.length }) : ''}</span>
-      </div>
       <div className="bench-strip">
         {bench.length === 0 && (
           <span className="hint">{status === 'running' ? t('bench.empty') : t('bench.noBackend')}</span>

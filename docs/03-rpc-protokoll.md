@@ -63,6 +63,8 @@ Version: **0.1** (M0)
 
 Notification `record {code, invocation}`: der Python-Code der interaktiven Aktion („Record method calls").
 
+Notification `result {repr, type, invocation}`: Rückgabewert eines interaktiven `object.call`, falls nicht `None` – Electron schreibt ihn als eigene Zeile („→ 60 (int)") ins Terminal, zusätzlich zum Ergebnisdialog.
+
 Die **statische Analyse** (Klassendiagramm) läuft nicht über den Socket, sondern als eigener Prozess: `python -B -X utf8 backend/analyze.py <projekt>` schreibt das Modell (Module, Klassen, Methoden, Attribute, Kanten) als JSON auf stdout. Siehe `bluepy_backend/analyzer.py`.
 
 ## Debugger (M3)

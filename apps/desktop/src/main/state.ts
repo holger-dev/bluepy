@@ -26,7 +26,7 @@ export class TerminalLog {
   /** Append a chunk; consecutive chunks of one stream/invocation are merged into one entry. */
   append(stream: TerminalEntry['stream'], text: string, invocation: TerminalEntry['invocation']): TerminalEntry {
     const last = this.entries[this.entries.length - 1]
-    if (last && last.stream === stream && last.invocation === invocation && stream !== 'record') {
+    if (last && last.stream === stream && last.invocation === invocation && stream !== 'record' && stream !== 'result') {
       last.text += text
       return last
     }
@@ -149,6 +149,12 @@ export class AppState {
         break
       case 'record':
         this.broadcast({ type: 'terminal', entry: { ...this.terminal.append('record', event.code + '\n', event.invocation) } })
+        break
+      case 'result':
+        this.broadcast({
+          type: 'terminal',
+          entry: { ...this.terminal.append('result', `${event.repr} (${event.valueType})\n`, event.invocation) }
+        })
         break
       case 'stdin.request':
         this.setWaiting(true)

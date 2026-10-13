@@ -74,8 +74,7 @@ export function CodePad(): JSX.Element {
 
   return (
     <div className="pane-body codepad">
-      <div className="pane-title">
-        {t('codepad.title')}
+      <div className="pane-actions">
         <button type="button" className="link" onClick={clear}>
           {t('codepad.clear')}
         </button>

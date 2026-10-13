@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type JSX } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BenchObject, InvocationResult, LiveMethodInfo } from '@bluepy/protocol'
 import { ClassDiagram, type DiagramNode } from '../components/ClassDiagram'
+import { CollapsiblePane, usePaneState } from '../components/Collapsible'
 import { ContextMenu, type MenuEntry } from '../components/ContextMenu'
 import { ObjectBench } from '../components/ObjectBench'
 import { CreateObjectDialog, InspectorDialog, MethodCallDialog, ResultDialog, type DialogState } from '../components/ObjectDialogs'
@@ -39,6 +40,7 @@ export function DiagramWindow(): JSX.Element {
   const setMessage = useStore((s) => s.setMessage)
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [dialog, setDialog] = useState<DialogState>(null)
+  const { collapsed, toggle } = usePaneState()
   const running = status === 'running'
 
   useEffect(() => {
@@ -159,15 +161,17 @@ export function DiagramWindow(): JSX.Element {
           {t('toolbar.editorWindow')}
         </button>
       </header>
-      <main className="workspace workspace-diagram">
+      <main className={`workspace workspace-diagram ${collapsed.bench ? 'bench-collapsed' : ''}`}>
         <section className="pane pane-diagram">
           <ClassDiagram onClassMenu={(node, x, y) => void onClassMenu(node, x, y)} />
         </section>
         <section className="pane pane-bench">
-          <ObjectBench
-            onObjectMenu={(obj, x, y) => void onObjectMenu(obj, x, y)}
-            onInspect={(obj) => setDialog({ kind: 'inspect', name: obj.name, title: obj.name, path: [] })}
-          />
+          <CollapsiblePane id="bench" title={t('bench.title')} collapsed={Boolean(collapsed.bench)} onToggle={() => toggle('bench')} orientation="horizontal">
+            <ObjectBench
+              onObjectMenu={(obj, x, y) => void onObjectMenu(obj, x, y)}
+              onInspect={(obj) => setDialog({ kind: 'inspect', name: obj.name, title: obj.name, path: [] })}
+            />
+          </CollapsiblePane>
         </section>
       </main>
       <StatusBar />

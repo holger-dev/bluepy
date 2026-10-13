@@ -33,8 +33,8 @@ export type BackendStatus =
 
 export interface TerminalEntry {
   id: number
-  /** 'record' = the Python code of an interactive action ("Record method calls"). */
-  stream: 'stdout' | 'stderr' | 'raw' | 'record'
+  /** 'record' = the Python code of an interactive action ("Record method calls"), 'result' = its return value. */
+  stream: 'stdout' | 'stderr' | 'raw' | 'record' | 'result'
   text: string
   invocation: RpcId
 }

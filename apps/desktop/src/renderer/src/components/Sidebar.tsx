@@ -19,10 +19,9 @@ export function Sidebar(): JSX.Element {
 
   return (
     <aside className="sidebar">
-      <div className="pane-title">
-        {project.name}
+      <div className="sidebar-actions">
         <button type="button" className="link" onClick={() => setNewFileOpen(true)} title={t('sidebar.newFile')}>
-          ＋
+          ＋ {t('sidebar.newFile')}
         </button>
       </div>
       <ul className="file-list">

@@ -35,8 +35,7 @@ export function Terminal(): JSX.Element {
   let lastInvocation: unknown = undefined
   return (
     <div className="pane-body terminal">
-      <div className="pane-title">
-        {t('terminal.title')}
+      <div className="pane-actions">
         <button type="button" className="link" onClick={() => void clear()}>
           {t('terminal.clear')}
         </button>

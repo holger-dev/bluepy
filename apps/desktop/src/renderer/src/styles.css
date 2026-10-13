@@ -17,13 +17,19 @@
   --stderr: #b91c1c;
   --active-line: rgba(37, 99, 235, 0.06);
 
-  /* BlueJ-like scope bands (nesting depth 1..6) */
-  --scope-1: rgba(255, 213, 79, 0.16);
-  --scope-2: rgba(129, 199, 132, 0.18);
-  --scope-3: rgba(100, 181, 246, 0.18);
-  --scope-4: rgba(206, 147, 216, 0.2);
-  --scope-5: rgba(255, 171, 145, 0.22);
-  --scope-6: rgba(128, 222, 234, 0.24);
+  /* BlueJ-like scope boxes: frame colour, lighter body area, border – per block kind */
+  --scope-class: #d3efc9;
+  --scope-class-inner: #f3faf0;
+  --scope-class-border: #a8d699;
+  --scope-def: #f8eeae;
+  --scope-def-inner: #fdfae8;
+  --scope-def-border: #dccf78;
+  --scope-loop: #cfe0f7;
+  --scope-loop-inner: #eef4fc;
+  --scope-loop-border: #9fbdea;
+  --scope-branch: #e5d9f4;
+  --scope-branch-inner: #f6f2fb;
+  --scope-branch-border: #c4afe3;
 
   --class-fill: #fff3c4;
   --class-stroke: #a68b2a;
@@ -46,12 +52,18 @@
     --bad-bg: #7f1d1d;
     --stderr: #f87171;
     --active-line: rgba(96, 165, 250, 0.08);
-    --scope-1: rgba(255, 213, 79, 0.1);
-    --scope-2: rgba(129, 199, 132, 0.12);
-    --scope-3: rgba(100, 181, 246, 0.12);
-    --scope-4: rgba(206, 147, 216, 0.14);
-    --scope-5: rgba(255, 171, 145, 0.14);
-    --scope-6: rgba(128, 222, 234, 0.16);
+    --scope-class: #24402b;
+    --scope-class-inner: #1d2b22;
+    --scope-class-border: #3a6a45;
+    --scope-def: #45411f;
+    --scope-def-inner: #2c2b1d;
+    --scope-def-border: #776d32;
+    --scope-loop: #203752;
+    --scope-loop-inner: #1c2734;
+    --scope-loop-border: #35618f;
+    --scope-branch: #3b2e4f;
+    --scope-branch-inner: #272232;
+    --scope-branch-border: #5f4a88;
     --class-fill: #4a4320;
     --class-stroke: #d4b44a;
     --abstract-fill: #1e3a5f;
@@ -1120,4 +1132,110 @@ button.link {
 .cm-debug-line {
   background: rgba(250, 204, 21, 0.35) !important;
   box-shadow: inset 3px 0 0 #ca8a04;
+}
+
+.terminal-line.result {
+  color: var(--ok);
+}
+.terminal-line.result::before {
+  content: "→ ";
+}
+
+/* ------------------------------------------------------ collapsible panes */
+
+.pane-sidebar {
+  grid-area: sidebar;
+  display: flex;
+}
+.pane-sidebar .pane-body,
+.pane-sidebar .sidebar {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+}
+.pane-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pane-content > * {
+  flex: 1;
+  min-height: 0;
+}
+.pane-collapse {
+  border: none;
+  background: none;
+  padding: 0 4px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.pane-collapse:hover {
+  color: var(--accent);
+}
+.pane-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 2px 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+}
+.sidebar-actions {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-alt);
+  font-size: 12px;
+}
+.sidebar-actions .link {
+  margin: 0;
+  padding: 0;
+}
+.pane-strip {
+  width: 100%;
+  height: 100%;
+  border: none;
+  border-radius: 6px;
+  background: var(--surface-alt);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.pane-strip:hover {
+  color: var(--accent);
+}
+.pane-strip-vertical {
+  flex-direction: column;
+}
+.pane-strip-vertical .pane-strip-label {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+.pane-strip-horizontal {
+  flex-direction: row;
+}
+
+/* collapsed layouts of the main window */
+.workspace-main.sidebar-collapsed {
+  grid-template-columns: 28px minmax(420px, 3fr) minmax(280px, 2fr);
+}
+.workspace-main.codepad-collapsed {
+  grid-template-columns: 200px minmax(420px, 1fr) 28px;
+}
+.workspace-main.sidebar-collapsed.codepad-collapsed {
+  grid-template-columns: 28px minmax(420px, 1fr) 28px;
+}
+.workspace-main.terminal-collapsed {
+  grid-template-rows: minmax(0, 1fr) 30px;
+}
+.workspace-diagram.bench-collapsed {
+  grid-template-rows: minmax(0, 1fr) 30px;
 }

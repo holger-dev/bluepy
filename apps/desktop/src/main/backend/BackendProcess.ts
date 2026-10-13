@@ -24,6 +24,7 @@ import {
   InvocationStartedParamsSchema,
   OutputParamsSchema,
   RecordParamsSchema,
+  ResultParamsSchema,
   RpcIncomingSchema,
   StdinRequestParamsSchema
 } from '@bluepy/protocol/schemas'
@@ -44,6 +45,7 @@ export type ProcessEvent =
   | { type: 'output'; stream: 'stdout' | 'stderr'; text: string; invocation: RpcId }
   | { type: 'stdin.request'; invocation: RpcId }
   | { type: 'record'; code: string; invocation: RpcId }
+  | { type: 'result'; repr: string; valueType: string; invocation: RpcId }
   | { type: 'debug.paused'; reason: 'breakpoint' | 'step' | 'pause'; frames: DebugFrame[]; invocation: RpcId }
   | { type: 'debug.resumed'; command: string }
   | { type: 'invocation.started'; invocation: RpcId; method: string }
@@ -267,6 +269,11 @@ export class BackendProcess extends EventEmitter {
       case 'record': {
         const p = RecordParamsSchema.safeParse(params)
         if (p.success) this.emitEvent({ type: 'record', ...p.data })
+        return
+      }
+      case 'result': {
+        const p = ResultParamsSchema.safeParse(params)
+        if (p.success) this.emitEvent({ type: 'result', repr: p.data.repr, valueType: p.data.type, invocation: p.data.invocation })
         return
       }
       case 'debug.paused': {

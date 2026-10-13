@@ -470,9 +470,12 @@ class Session:
             sys.stderr.write("".join(traceback.format_exception(exc)))
             return {"ok": False, "error": format_exception(exc), "record": code, "bench": self.bench.list()}
         self.namespace["_"] = result
+        value = None if result is None else describe_value(result)
+        if value is not None:
+            self.conn.notify("result", {"repr": value["repr"], "type": value["type"], "invocation": self.current_invocation})
         return {
             "ok": True,
-            "value": None if result is None else describe_value(result),
+            "value": value,
             "inspectable": is_inspectable(result),
             "record": code,
             "bench": self.bench.list(),

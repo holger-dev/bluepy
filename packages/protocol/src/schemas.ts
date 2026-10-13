@@ -65,6 +65,12 @@ export const RecordParamsSchema = z.object({
   invocation: RpcIdSchema
 })
 
+export const ResultParamsSchema = z.object({
+  repr: z.string(),
+  type: z.string(),
+  invocation: RpcIdSchema
+})
+
 export const InvocationStartedParamsSchema = z.object({
   invocation: RpcIdSchema,
   method: z.string()
