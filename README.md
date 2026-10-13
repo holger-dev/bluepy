@@ -63,7 +63,7 @@ Linux braucht keine Signatur.
 
 ## Release
 
-Es gibt keine CI auf Push. Ein **GitHub-Release** (Tag `vX.Y.Z`, passend zur Version in `apps/desktop/package.json`) startet `.github/workflows/release.yml`: baut auf macOS/Windows/Linux, signiert und notarisiert (macOS mit Developer ID, Windows sobald das Zertifikat als Secret hinterlegt ist) und hängt DMG, Setup-EXE/Portable, AppImage/DEB an das Release. Die nötigen Secrets stehen oben in der Workflow-Datei. Manuell: *Actions → Release → Run workflow* baut ohne Veröffentlichung (Installer als Artefakte).
+Es gibt keine CI auf Push. Ein **GitHub-Release** (Tag beliebig, z. B. `v1.0.0`; die Dateinamen tragen die Version aus `apps/desktop/package.json`) startet `.github/workflows/release.yml`: baut auf macOS/Windows/Linux, signiert und notarisiert (macOS mit Developer ID, Windows sobald das Zertifikat als Secret hinterlegt ist) und hängt DMG, Setup-EXE/Portable, AppImage/DEB per `gh release upload` an genau dieses Release. Die nötigen Secrets stehen oben in der Workflow-Datei. Manuell: *Actions → Release → Run workflow* baut ohne Veröffentlichung (Installer als Artefakte). Wichtig: *Re-run jobs* baut immer den ursprünglichen Commit des Runs – nach einem Fix also ein neues Release anlegen oder *Run workflow* nutzen.
 
 ## Paketieren
 

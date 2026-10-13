@@ -1,5 +1,7 @@
 appId: dev.heidkamp.bluepy
 productName: BluePy
+# The package is named @bluepy/desktop; without this the binary would be called "@bluepydesktop" (AppImage refuses that).
+executableName: BluePy
 copyright: Copyright © 2026 Holger Heidkamp – GPL-3.0
 directories:
   output: release
@@ -28,6 +30,7 @@ npmRebuild: false
 
 mac:
   category: public.app-category.developer-tools
+  icon: build/icon.png
   target:
     - target: dmg
       arch: [universal]
@@ -42,6 +45,7 @@ dmg:
   artifactName: ${productName}-${version}-mac.${ext}
 
 win:
+  icon: build/icon.png
   target:
     - target: nsis
     - target: portable
@@ -56,14 +60,12 @@ portable:
   artifactName: ${productName}-${version}-portable.${ext}
 
 linux:
+  icon: build/icon.png
   category: Development
   target:
     - deb
     - AppImage
   artifactName: ${productName}-${version}-linux-${arch}.${ext}
 
-publish:
-  provider: github
-  owner: holger-dev
-  repo: bluepy
-  releaseType: release
+# No `publish` block: the Release workflow attaches the installers to the triggering
+# release with `gh release upload`, so the tag name does not have to match the version.
