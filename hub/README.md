@@ -24,7 +24,7 @@ Reine Python-Standardbibliothek (3.11+), SQLite und Dateien unter `data/`, ein D
    ```
 5. **Lehrkraft anlegen** – der Schlüssel wird nur einmal angezeigt:
    ```bash
-   docker compose exec hub python -m bluepy_hub teacher add "Holger Heidkamp"
+   docker compose run --rm hub teacher add "Holger Heidkamp"
    ```
    Den Schlüssel in BluePy unter *Einstellungen ▸ Aufgaben-Hub* eintragen (Hub-URL: `https://bluepy.deine-schule.de`).
 
@@ -34,13 +34,15 @@ Fertig. `https://bluepy.deine-schule.de/` zeigt die Landing Page aus `site/`, `/
 
 | Was | Befehl |
 |---|---|
-| Lehrkräfte auflisten / entfernen | `docker compose exec hub python -m bluepy_hub teacher list` / `… teacher remove <id>` |
-| Zähler | `docker compose exec hub python -m bluepy_hub stats` |
+| Lehrkräfte auflisten / entfernen | `docker compose run --rm hub teacher list` / `… teacher remove <id>` |
+| Zähler | `docker compose run --rm hub stats` |
 | Update | `cd /opt/bluepy && git pull && cd hub && docker compose up -d --build` |
 | Backup | `data/` sichern (SQLite + Pakete), z. B. nächtlich per `tar czf` auf den Hetzner Storage Box |
 | Logs | `docker compose logs -f` |
 
 Firewall: nur 22, 80 und 443 offen lassen (Hetzner Cloud Firewall oder `ufw`).
+
+Rechte: Der Container startet als root, setzt `data/` auf den Nutzer `hub` (uid 1000) und läuft dann unprivilegiert weiter (`entrypoint.py`) – deshalb immer `docker compose run --rm hub …` für Admin-Befehle, nicht `exec`.
 
 ## Ohne Docker
 

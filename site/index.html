@@ -25,11 +25,18 @@
     --object: #e11d48;
     --ok: #15803d;
     --scope-class: #d3efc9;
+    --scope-class-inner: #f3faf0;
     --scope-class-line: #a8d699;
     --scope-def: #f8eeae;
+    --scope-def-inner: #fdfae8;
     --scope-def-line: #dccf78;
     --scope-loop: #cfe0f7;
+    --scope-loop-inner: #eef4fc;
     --scope-loop-line: #9fbdea;
+    --scope-branch: #e5d9f4;
+    --scope-branch-inner: #f6f2fb;
+    --scope-branch-line: #c4afe3;
+    --shadow-win: 0 34px 80px -30px rgba(20, 30, 60, 0.5), 0 2px 6px rgba(20, 30, 60, 0.08);
     --code-kw: #a626a4;
     --code-def: #4078f2;
     --code-str: #50a14f;
@@ -42,7 +49,9 @@
     :root:not([data-theme="light"]) {
       --bg: #0f1217; --surface: #171b22; --surface-2: #1f242d; --fg: #e7eaf0; --muted: #9aa4b5; --line: #2b323e;
       --accent: #6d93ff; --accent-fg: #0b1220; --class: #4a4320; --class-line: #d4b44a; --object: #fb7185; --ok: #4ade80;
-      --scope-class: #24402b; --scope-class-line: #3a6a45; --scope-def: #45411f; --scope-def-line: #776d32; --scope-loop: #203752; --scope-loop-line: #35618f;
+      --scope-class: #24402b; --scope-class-inner: #1d2b22; --scope-class-line: #3a6a45; --scope-def: #45411f; --scope-def-inner: #2c2b1d; --scope-def-line: #776d32; --scope-loop: #203752; --scope-loop-inner: #1c2734; --scope-loop-line: #35618f;
+      --scope-branch: #3b2e4f; --scope-branch-inner: #272232; --scope-branch-line: #5f4a88;
+      --shadow-win: 0 34px 80px -30px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04);
       --code-kw: #c678dd; --code-def: #61afef; --code-str: #98c379; --code-num: #d19a66;
       color-scheme: dark;
     }
@@ -50,7 +59,9 @@
   :root[data-theme="dark"] {
     --bg: #0f1217; --surface: #171b22; --surface-2: #1f242d; --fg: #e7eaf0; --muted: #9aa4b5; --line: #2b323e;
     --accent: #6d93ff; --accent-fg: #0b1220; --class: #4a4320; --class-line: #d4b44a; --object: #fb7185; --ok: #4ade80;
-    --scope-class: #24402b; --scope-class-line: #3a6a45; --scope-def: #45411f; --scope-def-line: #776d32; --scope-loop: #203752; --scope-loop-line: #35618f;
+    --scope-class: #24402b; --scope-class-inner: #1d2b22; --scope-class-line: #3a6a45; --scope-def: #45411f; --scope-def-inner: #2c2b1d; --scope-def-line: #776d32; --scope-loop: #203752; --scope-loop-inner: #1c2734; --scope-loop-line: #35618f;
+    --scope-branch: #3b2e4f; --scope-branch-inner: #272232; --scope-branch-line: #5f4a88;
+    --shadow-win: 0 34px 80px -30px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.04);
     --code-kw: #c678dd; --code-def: #61afef; --code-str: #98c379; --code-num: #d19a66;
     color-scheme: dark;
   }
@@ -106,48 +117,108 @@
   .platforms { display: flex; gap: 10px 18px; flex-wrap: wrap; font-size: 0.95rem; color: var(--muted); }
   .platforms span::before { content: "✓ "; color: var(--ok); font-weight: 700; }
 
-  /* IDE illustration */
-  .shot { margin-top: 10px; }
-  .shot img { display: block; width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 24px 60px -30px rgba(0,0,0,0.45); }
-  .shot figcaption { margin-top: 10px; font-size: 0.9rem; color: var(--muted); }
-  .ide { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 24px 60px -30px rgba(0,0,0,0.45); overflow: hidden; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; }
-  .ide-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-family: var(--font-body); font-size: 12px; color: var(--muted); }
-  .dots { display: flex; gap: 6px; margin-right: 6px; }
-  .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
-  .ide-btn { padding: 2px 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--fg); }
-  .ide-btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
-  .ide-grid { display: grid; grid-template-columns: 150px minmax(0, 1.6fr) minmax(0, 1.1fr); grid-template-rows: auto auto; gap: 6px; padding: 6px; background: var(--bg); }
-  .ide-pane { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; min-width: 0; }
-  .ide-pane-title { padding: 3px 8px; font-family: var(--font-body); font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); }
-  .files { grid-row: 1 / span 2; }
-  .files ul { list-style: none; margin: 0; padding: 4px 0; font-family: var(--font-body); font-size: 12px; }
-  .files li { padding: 3px 10px; display: flex; gap: 8px; align-items: center; }
-  .files li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
-  .files li.active { background: var(--surface-2); font-weight: 600; }
-  .editor { position: relative; }
-  .code { position: relative; padding: 8px 10px 10px 10px; margin: 0; white-space: pre; overflow-x: auto; }
-  .ln { display: inline-block; width: 22px; color: var(--muted); user-select: none; }
-  .k { color: var(--code-kw); } .d { color: var(--code-def); } .s { color: var(--code-str); } .n { color: var(--code-num); }
-  .scope { position: absolute; border-radius: 4px; z-index: 0; }
-  .scope.c { background: var(--scope-class); border: 1px solid var(--scope-class-line); }
-  .scope.d { background: var(--scope-def); border: 1px solid var(--scope-def-line); }
-  .scope.l { background: var(--scope-loop); border: 1px solid var(--scope-loop-line); }
-  .scope.inner-c { background: var(--surface); opacity: 0.75; }
-  .code .line { position: relative; z-index: 1; display: block; }
-  .diagram { position: relative; }
-  .diagram svg { display: block; width: 100%; height: auto; }
-  .bench { grid-column: 2 / span 2; }
-  .bench-strip { display: flex; gap: 8px; padding: 8px; background: var(--surface-2); flex-wrap: wrap; }
-  .obj { display: inline-flex; flex-direction: column; align-items: center; min-width: 84px; padding: 5px 10px; background: var(--object); color: #fff; border-radius: 4px; box-shadow: 2px 2px 0 rgba(0,0,0,0.25); font-size: 11.5px; }
-  .obj b { font-weight: 600; }
-  .term { grid-column: 1 / span 3; }
-  .term pre { margin: 0; padding: 6px 10px; font-size: 12px; }
-  .term .rec { color: var(--muted); font-style: italic; }
-  .term .res { color: var(--ok); }
-  @media (max-width: 760px) {
-    .ide-grid { grid-template-columns: minmax(0, 1fr); }
-    .files { display: none; }
-    .bench, .term { grid-column: auto; }
+  /* IDE illustration: a window mock-up built from real DOM nesting, so the scope boxes follow the lines */
+  .shot { position: relative; margin-top: 40px; }
+  .shot::before {
+    content: ""; position: absolute; inset: -56px -3% -40px; z-index: 0; pointer-events: none; border-radius: 48px;
+    background:
+      radial-gradient(60% 70% at 12% 14%, color-mix(in srgb, var(--accent) 55%, transparent), transparent 70%),
+      radial-gradient(50% 60% at 88% 8%, color-mix(in srgb, var(--class-line) 55%, transparent), transparent 70%),
+      radial-gradient(55% 55% at 55% 100%, color-mix(in srgb, var(--scope-class-line) 70%, transparent), transparent 70%),
+      radial-gradient(40% 50% at 95% 90%, color-mix(in srgb, var(--object) 35%, transparent), transparent 70%);
+    filter: blur(36px);
+  }
+  .shot img, .ide { position: relative; z-index: 1; }
+  .shot img { display: block; width: 100%; border-radius: 14px; border: 1px solid var(--line); box-shadow: var(--shadow-win); }
+  .shot img[hidden], .ide[hidden] { display: none; }
+  .shot figcaption { position: relative; z-index: 1; margin-top: 14px; font-size: 0.9rem; color: var(--muted); }
+
+  .ide { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); box-shadow: var(--shadow-win); overflow: hidden; font-family: var(--font-body); font-size: 12.5px; line-height: 1.5; color: var(--fg); text-align: left; }
+  .ide-title { display: flex; align-items: center; height: 40px; padding: 0 14px; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .lights { display: flex; gap: 8px; width: 52px; }
+  .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+  .lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+  .ide-title .ttl { flex: 1; text-align: center; font-weight: 600; }
+  .ide-title .spacer { width: 52px; }
+  .ide-tools { display: flex; align-items: center; gap: 6px; padding: 7px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
+  .tool { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--fg); font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .tool svg { width: 13px; height: 13px; flex: none; }
+  .tool.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .tool .kbd { font-family: var(--font-mono); font-weight: 400; font-size: 10.5px; color: var(--muted); }
+  .tool.primary .kbd { color: inherit; opacity: 0.8; }
+  .tool.icon { width: 26px; padding: 0; justify-content: center; }
+  .ide-tools .grow { flex: 1; }
+
+  .ide-body { position: relative; display: grid; grid-template-columns: 150px minmax(0, 1.6fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+  .pane { background: var(--surface); min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .pane-h { display: flex; align-items: center; gap: 6px; padding: 5px 10px; font-size: 10.5px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); }
+  .pane-h::after { content: "▾"; margin-left: auto; font-size: 10px; opacity: 0.7; }
+  .p-files { grid-row: 1 / span 2; }
+  .p-editor { grid-column: 2; grid-row: 1; }
+  .p-diagram { grid-column: 3; grid-row: 1; }
+  .p-term { grid-column: 2; grid-row: 2; }
+  .p-bench { grid-column: 3; grid-row: 2; }
+
+  .files { list-style: none; margin: 0; padding: 6px 0; }
+  .files li { display: flex; align-items: center; gap: 8px; padding: 4px 12px; color: var(--fg); white-space: nowrap; }
+  .files li::before { content: ""; width: 12px; height: 15px; flex: none; border: 1.4px solid var(--muted); border-radius: 2px 5px 2px 2px; opacity: 0.75; }
+  .files li.active { background: color-mix(in srgb, var(--accent) 13%, transparent); font-weight: 600; }
+  .files li.test::before { border-color: var(--ok); opacity: 1; }
+
+  .tabs { display: flex; background: var(--surface-2); border-bottom: 1px solid var(--line); font-size: 12px; overflow: hidden; }
+  .tab { padding: 6px 14px; color: var(--muted); border-right: 1px solid var(--line); white-space: nowrap; }
+  .tab.active { background: var(--surface); color: var(--fg); font-weight: 600; box-shadow: inset 0 2px 0 var(--accent); }
+
+  .code { position: relative; flex: 1; margin: 0; padding: 10px 12px 12px 42px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.75; white-space: pre; overflow: hidden; counter-reset: line; }
+  .ln { display: block; min-height: 1.75em; counter-increment: line; }
+  .ln::before { content: counter(line); position: absolute; left: 0; width: 30px; text-align: right; font-size: 11px; color: var(--muted); opacity: 0.8; }
+  .ln.bp::before { background: radial-gradient(circle at 7px 50%, var(--object) 4.5px, transparent 5px); }
+  .k { color: var(--code-kw); } .d { color: var(--code-def); } .s { color: var(--code-str); } .n { color: var(--code-num); } .cm { color: var(--muted); font-style: italic; }
+  .blk { border: 1px solid; border-radius: 5px; padding-left: 5px; margin: 2px 0; }
+  .blk.sc-c { background: var(--scope-class); border-color: var(--scope-class-line); }
+  .blk.sc-d { background: var(--scope-def); border-color: var(--scope-def-line); }
+  .blk.sc-b { background: var(--scope-branch); border-color: var(--scope-branch-line); }
+  .bd { margin: 0 6px 3px calc(4ch - 6px); padding: 1px 0 1px 6px; border-radius: 3px; }
+  .blk.sc-c > .bd { background: var(--scope-class-inner); }
+  .blk.sc-d > .bd { background: var(--scope-def-inner); }
+  .blk.sc-b > .bd { background: var(--scope-branch-inner); }
+  .bd > .blk { margin-left: -6px; margin-right: 2px; }
+
+  .diagram { flex: 1; display: grid; place-items: center; padding: 10px 12px; }
+  .diagram svg { display: block; width: 100%; max-width: 330px; height: auto; }
+
+  .bench-strip { display: flex; gap: 10px; padding: 12px; flex-wrap: wrap; align-content: flex-start; flex: 1; min-height: 116px; }
+  .obj { display: inline-flex; flex-direction: column; align-items: center; min-width: 92px; padding: 6px 12px; background: var(--object); color: #fff; border-radius: 6px; box-shadow: 0 2px 0 color-mix(in srgb, var(--object) 60%, black), 0 6px 14px -8px rgba(0,0,0,0.5); font-size: 12px; line-height: 1.3; }
+  .obj b { font-weight: 700; }
+  .obj small { font-size: 11px; opacity: 0.85; }
+  .obj.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .codepad { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid var(--line); font-family: var(--font-mono); font-size: 12px; white-space: nowrap; overflow: hidden; }
+  .codepad .prompt { color: var(--accent); font-weight: 600; }
+  .codepad .chip { margin-left: auto; font-family: var(--font-body); font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--object); color: #fff; white-space: nowrap; }
+  .term-out { margin: 0; padding: 8px 10px 10px; font-family: var(--font-mono); font-size: 12px; line-height: 1.6; white-space: pre; overflow: hidden; flex: 1; }
+  .term-out .rec { color: var(--muted); font-style: italic; }
+  .term-out .res { color: var(--ok); font-weight: 600; }
+
+  .menu { position: absolute; right: 22px; bottom: 26px; z-index: 5; min-width: 168px; padding: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 14px 34px -10px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.12); font-family: var(--font-mono); font-size: 12px; }
+  .menu .mi { padding: 4px 10px; border-radius: 5px; white-space: nowrap; }
+  .menu .mi.hl { background: var(--accent); color: var(--accent-fg); }
+  .menu .mi.plain { font-family: var(--font-body); }
+  .menu .sep { height: 1px; margin: 4px 6px; background: var(--line); }
+  .menu .cursor { position: absolute; right: 44px; top: 40px; width: 16px; height: 20px; }
+
+  .ide-status { display: flex; align-items: center; gap: 8px; padding: 5px 12px; font-size: 11.5px; color: var(--muted); background: var(--surface-2); }
+  .ide-status .ok { color: var(--ok); font-weight: 600; }
+  .ide-status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .ide-status .right { margin-left: auto; }
+
+  @media (max-width: 860px) {
+    .ide-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+    .p-files, .menu, .ide-title .spacer { display: none; }
+    .p-editor, .p-diagram, .p-term, .p-bench { grid-column: auto; grid-row: auto; }
+    .tool .kbd, .tool.opt, .ide-status .right { display: none; }
+    .code { font-size: 11px; padding-left: 34px; }
+    .ln::before { width: 24px; }
   }
 
   /* features */
@@ -213,65 +284,83 @@
 
     <figure class="shot">
       <img id="screenshot" src="screenshot.png" alt="BluePy: Editor mit Scope-Highlighting, Klassendiagramm und Objektleiste" hidden>
-      <div class="ide" id="ide-illustration" aria-label="BluePy-Oberfläche, Darstellung">
-        <div class="ide-bar">
-          <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
-          <span class="ide-btn">Klassendiagramm</span><span class="ide-btn">Debugger</span><span class="ide-btn primary">Compile</span>
-          <span style="margin-left:auto">bank</span>
+      <div class="ide" id="ide-illustration" role="img" aria-label="BluePy-Oberfläche: Dateiliste, Editor mit farbigen Scope-Kästen, Klassendiagramm, Objektleiste mit Kontextmenü, Code Pad und Terminal">
+        <div class="ide-title"><div class="lights" aria-hidden="true"><i></i><i></i><i></i></div><span class="ttl">bank – BluePy</span><span class="spacer"></span></div>
+        <div class="ide-tools" aria-hidden="true">
+          <span class="tool primary"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M3 2.5v11l10-5.5z"/></svg>Compile <span class="kbd">⌘K</span></span>
+          <span class="tool"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 8.5l3.5 3.5 7.5-8"/></svg>Tests <span class="kbd">⌘⇧R</span></span>
+          <span class="tool opt"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1.5" y="1.5" width="5" height="4" rx="1"/><rect x="9.5" y="1.5" width="5" height="4" rx="1"/><rect x="5.5" y="10.5" width="5" height="4" rx="1"/><path d="M4 5.5v2.5h8V5.5M8 8v2.5"/></svg>Klassendiagramm</span>
+          <span class="tool opt"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><ellipse cx="8" cy="9" rx="3.5" ry="4.5"/><path d="M8 4.5V2.5M5 3l1.5 1.5M11 3L9.5 4.5M2 9h2.5M11.5 9H14M3 13l2-1.5M13 13l-2-1.5M3 5l2 1.5M13 5l-2 1.5"/></svg>Debugger</span>
+          <span class="grow"></span>
+          <span class="tool icon" title="Farbschema"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 1.6v10.8A5.4 5.4 0 018 2.6z"/></svg></span>
         </div>
-        <div class="ide-grid">
-          <div class="ide-pane files">
-            <div class="ide-pane-title">bank</div>
-            <ul>
+        <div class="ide-body">
+          <div class="pane p-files">
+            <div class="pane-h">bank</div>
+            <ul class="files">
               <li>bank.py</li>
               <li class="active">konto.py</li>
               <li>person.py</li>
               <li>sparkonto.py</li>
-              <li>test_konto.py</li>
+              <li class="test">test_konto.py</li>
             </ul>
           </div>
-          <div class="ide-pane editor">
-            <div class="ide-pane-title">konto.py</div>
-            <pre class="code"><span class="scope c" style="left:30px;top:8px;right:8px;height:200px"></span><span class="scope inner-c" style="left:56px;top:28px;right:16px;height:176px"></span><span class="scope d" style="left:56px;top:28px;right:16px;height:60px"></span><span class="scope d" style="left:56px;top:92px;right:16px;height:100px"></span><span class="scope l" style="left:84px;top:132px;right:24px;height:56px"></span><span class="line"><span class="ln">1</span><span class="k">class</span> <span class="d">Konto</span>:</span><span class="line"><span class="ln">2</span>    <span class="k">def</span> <span class="d">__init__</span>(self, inhaber: Person, stand: float = <span class="n">0.0</span>):</span><span class="line"><span class="ln">3</span>        self.inhaber = inhaber</span><span class="line"><span class="ln">4</span>        self.stand = stand</span><span class="line"><span class="ln">5</span></span><span class="line"><span class="ln">6</span>    <span class="k">def</span> <span class="d">einzahlen</span>(self, betrag: float) -&gt; <span class="d">None</span>:</span><span class="line"><span class="ln">7</span>        <span class="s">"""Zahlt betrag ein, wenn er positiv ist."""</span></span><span class="line"><span class="ln">8</span>        <span class="k">if</span> betrag &lt;= <span class="n">0</span>:</span><span class="line"><span class="ln">9</span>            <span class="k">raise</span> <span class="d">ValueError</span>(<span class="s">"Betrag muss positiv sein"</span>)</span><span class="line"><span class="ln">10</span>        self.stand += betrag</span></pre>
+          <div class="pane p-editor">
+            <div class="tabs"><span class="tab active">konto.py</span><span class="tab">person.py</span><span class="tab">test_konto.py</span></div>
+            <div class="code"><div class="blk sc-c"><span class="ln"><span class="k">class</span> <span class="d">Konto</span>:</span><div class="bd"><div class="blk sc-d"><span class="ln"><span class="k">def</span> <span class="d">__init__</span>(self, inhaber: Person, stand: float = <span class="n">0.0</span>):</span><div class="bd"><span class="ln">self.inhaber = inhaber</span><span class="ln">self.stand = stand</span></div></div><span class="ln"></span><div class="blk sc-d"><span class="ln"><span class="k">def</span> <span class="d">einzahlen</span>(self, betrag: float) -&gt; <span class="d">None</span>:</span><div class="bd"><span class="ln"><span class="s">"""Zahlt betrag ein, wenn er positiv ist."""</span></span><div class="blk sc-b"><span class="ln"><span class="k">if</span> betrag &lt;= <span class="n">0</span>:</span><div class="bd"><span class="ln"><span class="k">raise</span> <span class="d">ValueError</span>(<span class="s">"Betrag muss positiv sein"</span>)</span></div></div><span class="ln bp">self.stand += betrag</span></div></div></div></div></div>
           </div>
-          <div class="ide-pane diagram">
-            <div class="ide-pane-title">Klassendiagramm</div>
-            <svg viewBox="0 0 300 190" role="img" aria-label="Klassendiagramm mit Person, Konto, Sparkonto und Bank">
-              <defs>
-                <marker id="tri" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--surface)" stroke="var(--fg)" stroke-width="1.2"/></marker>
-                <marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10" fill="none" stroke="var(--fg)" stroke-width="1.2"/></marker>
-              </defs>
-              <g font-family="var(--font-body)" font-size="11" font-weight="600" text-anchor="middle" fill="var(--fg)">
-                <rect x="20" y="18" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="65" y="40">Person</text>
-                <rect x="190" y="18" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="235" y="40">Bank</text>
-                <rect x="105" y="86" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="150" y="108">Konto</text>
-                <rect x="105" y="146" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="150" y="168">Sparkonto</text>
-              </g>
-              <g fill="none" stroke="var(--fg)" stroke-width="1.3">
-                <line x1="150" y1="146" x2="150" y2="120" marker-end="url(#tri)"/>
-                <line x1="125" y1="86" x2="80" y2="52" marker-end="url(#arr)"/>
-                <line x1="207.4" y1="58.5" x2="175" y2="86" marker-end="url(#arr)"/>
-                <path d="M215,52 L213.8,58.3 L207.4,58.5 L208.6,52.2 Z" fill="var(--fg)"/>
-              </g>
-              <g font-family="var(--font-mono)" font-size="9" fill="var(--muted)">
-                <text x="92" y="76">inhaber 1</text><text x="200" y="76">konten *</text>
-              </g>
-            </svg>
+          <div class="pane p-diagram">
+            <div class="pane-h">Klassendiagramm</div>
+            <div class="diagram">
+              <svg viewBox="0 0 320 196" aria-hidden="true">
+                <defs>
+                  <marker id="tri" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M1,1 L11,6 L1,11 z" fill="var(--surface)" stroke="var(--fg)" stroke-width="1.2"/></marker>
+                  <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M1,1 L9,5 L1,9" fill="none" stroke="var(--fg)" stroke-width="1.3"/></marker>
+                  <marker id="dia" viewBox="0 0 14 10" refX="1" refY="5" markerWidth="14" markerHeight="10" orient="auto-start-reverse"><path d="M1,5 L7,1 L13,5 L7,9 z" fill="var(--fg)"/></marker>
+                </defs>
+                <g fill="none" stroke="var(--fg)" stroke-width="1.3">
+                  <line x1="160" y1="150" x2="160" y2="126" marker-end="url(#tri)"/>
+                  <line x1="134" y1="90" x2="92" y2="58" marker-end="url(#arr)"/>
+                  <line x1="226" y1="58" x2="186" y2="90" marker-start="url(#dia)" marker-end="url(#arr)"/>
+                  <line x1="200" y1="40" x2="124" y2="40" stroke-dasharray="4 3" marker-end="url(#arr)"/>
+                </g>
+                <g font-family="var(--font-body)" font-size="12" font-weight="600" text-anchor="middle" fill="var(--fg)">
+                  <rect x="24" y="20" width="100" height="36" rx="5" fill="var(--class)" stroke="var(--class-line)" stroke-width="1.3"/><text x="74" y="43">Person</text>
+                  <rect x="200" y="20" width="100" height="36" rx="5" fill="var(--class)" stroke="var(--class-line)" stroke-width="1.3"/><text x="250" y="43">Bank</text>
+                  <rect x="110" y="90" width="100" height="36" rx="5" fill="var(--class)" stroke="var(--class-line)" stroke-width="1.3"/><text x="160" y="113">Konto</text>
+                  <rect x="110" y="150" width="100" height="36" rx="5" fill="var(--class)" stroke="var(--class-line)" stroke-width="1.3"/><text x="160" y="173">Sparkonto</text>
+                </g>
+                <g font-family="var(--font-mono)" font-size="9.5" fill="var(--muted)">
+                  <text x="96" y="80">inhaber 1</text><text x="208" y="80">konten *</text><text x="140" y="35" font-style="italic">«uses»</text>
+                </g>
+              </svg>
+            </div>
           </div>
-          <div class="ide-pane bench">
-            <div class="ide-pane-title">Objektleiste</div>
-            <div class="bench-strip"><span class="obj"><b>person1</b>: Person</span><span class="obj"><b>konto1</b>: Konto</span><span class="obj"><b>bank1</b>: Bank</span></div>
-          </div>
-          <div class="ide-pane term">
-            <div class="ide-pane-title">Terminal</div>
-            <pre><span class="rec">konto1 = Konto(person1, 100)</span>
-<span class="rec">konto1.einzahlen(50)</span>
+          <div class="pane p-term">
+            <div class="pane-h">Code Pad</div>
+            <div class="codepad"><span class="prompt">›</span><span>konto1 = Konto(person1, <span class="n">100</span>)</span><span class="chip">konto1 : Konto</span></div>
+            <div class="pane-h">Terminal</div>
+            <pre class="term-out"><span class="rec">konto1.einzahlen(50)</span>
 <span class="rec">konto1.kontostand()</span>
 <span class="res">→ 150.0 (float)</span></pre>
           </div>
+          <div class="pane p-bench">
+            <div class="pane-h">Objektleiste</div>
+            <div class="bench-strip"><span class="obj"><b>person1</b><small>Person</small></span><span class="obj sel"><b>konto1</b><small>Konto</small></span><span class="obj"><b>bank1</b><small>Bank</small></span></div>
+          </div>
+          <div class="menu" aria-hidden="true">
+            <div class="mi">einzahlen(betrag)</div>
+            <div class="mi hl">auszahlen(betrag)</div>
+            <div class="mi">kontostand()</div>
+            <div class="sep"></div>
+            <div class="mi plain">Inspizieren</div>
+            <div class="mi plain">Entfernen</div>
+            <svg class="cursor" viewBox="0 0 16 20"><path d="M1.5 1.5v15l3.8-3.4 2.6 5.4 2.4-1.1-2.6-5.3 5.2-.4z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg>
+          </div>
         </div>
+        <div class="ide-status" aria-hidden="true"><span class="dot"></span>Python 3.12 · bank<span class="ok">9 / 9 Tests bestanden</span><span class="right">konto.py · Zeile 10 · Breakpoint</span></div>
       </div>
-      <figcaption>Editor mit Scope-Highlighting, Klassendiagramm mit echten UML-Pfeilen, Objektleiste, Terminal mit aufgezeichneten Aufrufen.</figcaption>
+      <figcaption>Editor mit Scope-Kästen, Klassendiagramm mit UML-Pfeilen, Objektleiste mit Methodenmenü, Code Pad und Terminal – so sieht BluePy aus.</figcaption>
     </figure>
   </section>
 
@@ -368,7 +457,9 @@
 
   // Real screenshot replaces the CSS illustration as soon as screenshot.png exists next to this file.
   const shot = document.getElementById('screenshot');
-  shot.addEventListener('load', () => { shot.hidden = false; document.getElementById('ide-illustration').hidden = true; });
+  const reveal = () => { shot.hidden = false; document.getElementById('ide-illustration').hidden = true; };
+  shot.addEventListener('load', reveal);
+  if (shot.complete && shot.naturalWidth > 0) reveal();
 
   const copy = document.getElementById('copy-mail');
   copy.addEventListener('click', () => {

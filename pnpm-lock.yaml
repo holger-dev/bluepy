@@ -75,7 +75,7 @@ importers:
         specifier: ^4.7.0
         version: 4.7.0(vite@7.3.7(@types/node@22.20.5)(jiti@2.7.0))
       electron:
-        specifier: ^38.0.0
+        specifier: 38.8.6
         version: 38.8.6
       electron-builder:
         specifier: ^26.0.0
