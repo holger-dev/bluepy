@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type JSX } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { InspectResult, InvocationResult, LiveClassInfo, ParamInfo, UserError } from '@bluepy/protocol'
+import type { AssertionKind, InspectResult, InvocationResult, LiveClassInfo, ParamInfo, UserError } from '@bluepy/protocol'
 import { useStore } from '../store'
 import { ParamInputs, argumentsFrom } from './ParamInputs'
 
@@ -181,6 +181,15 @@ export function MethodCallDialog({
 
 // ------------------------------------------------------------------ result
 
+const ASSERTION_KINDS: AssertionKind[] = ['equal', 'almostEqual', 'true', 'false', 'isNone', 'isNotNone', 'is']
+
+function defaultAssertion(value: { repr: string; type: string; isNone: boolean }): AssertionKind {
+  if (value.isNone) return 'isNone'
+  if (value.type === 'bool') return value.repr === 'True' ? 'true' : 'false'
+  if (value.type === 'float') return 'almostEqual'
+  return 'equal'
+}
+
 export function ResultDialog({
   state,
   onClose,
@@ -192,21 +201,34 @@ export function ResultDialog({
 }): JSX.Element {
   const { t } = useTranslation()
   const getObject = useStore((s) => s.getObject)
+  const recording = useStore((s) => s.recording)
+  const recordAssertion = useStore((s) => s.recordAssertion)
   const value = state.result.value
   const [error, setError] = useState<string | null>(null)
+  const [withAssertion, setWithAssertion] = useState(true)
+  const [kind, setKind] = useState<AssertionKind>(() => (value ? defaultAssertion(value) : 'equal'))
+  const [expected, setExpected] = useState(value?.repr ?? '')
+  const needsExpected = kind === 'equal' || kind === 'almostEqual' || kind === 'is'
+
+  const finish = (): void => {
+    if (recording && value && withAssertion) {
+      void recordAssertion(state.label, needsExpected ? { kind, expected } : { kind })
+    }
+    onClose()
+  }
 
   const toBench = async (): Promise<void> => {
     try {
       const r = await getObject('_', [], null)
       if (!r.ok) setError(r.error?.message ?? 'Fehler')
-      else onClose()
+      else finish()
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     }
   }
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop" onClick={finish}>
       <div className="modal modal-small" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <h2>{t('dialog.resultTitle')}</h2>
         <code className="signature">{state.label}</code>
@@ -216,6 +238,26 @@ export function ResultDialog({
           </div>
         ) : (
           <p className="muted">{t('dialog.noResult')}</p>
+        )}
+        {recording && value && (
+          <div className="assertion-panel">
+            <label className="check">
+              <input type="checkbox" checked={withAssertion} onChange={(e) => setWithAssertion(e.target.checked)} />
+              <span>{t('tests.assertionAdd', { method: recording.method })}</span>
+            </label>
+            <div className="row">
+              <select value={kind} disabled={!withAssertion} onChange={(e) => setKind(e.target.value as AssertionKind)}>
+                {ASSERTION_KINDS.map((k) => (
+                  <option key={k} value={k}>
+                    {t(`tests.assertion.${k}`)}
+                  </option>
+                ))}
+              </select>
+              {needsExpected && (
+                <input className="mono grow" value={expected} disabled={!withAssertion} spellCheck={false} onChange={(e) => setExpected(e.target.value)} title={t('tests.expected')} />
+              )}
+            </div>
+          </div>
         )}
         <ErrorBox error={error} />
         <div className="row end">
@@ -229,7 +271,7 @@ export function ResultDialog({
               </button>
             </>
           )}
-          <button type="button" className="primary" onClick={onClose}>
+          <button type="button" className="primary" onClick={finish}>
             {t('setup.close')}
           </button>
         </div>

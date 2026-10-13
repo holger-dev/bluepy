@@ -1,0 +1,12 @@
+# Build context for hub/Dockerfile is the repo root – keep it small.
+node_modules
+**/node_modules
+apps
+packages
+backend
+examples
+docs
+hub/data
+hub/tests
+**/__pycache__
+.github

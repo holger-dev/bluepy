@@ -14,7 +14,9 @@ import type {
   RpcError,
   RpcId,
   RpcMethodName,
-  RpcMethods
+  RpcMethods,
+  TestCaseResult,
+  TestStartedParams
 } from '@bluepy/protocol'
 import {
   DebugPausedParamsSchema,
@@ -26,7 +28,9 @@ import {
   RecordParamsSchema,
   ResultParamsSchema,
   RpcIncomingSchema,
-  StdinRequestParamsSchema
+  StdinRequestParamsSchema,
+  TestCaseResultSchema,
+  TestStartedParamsSchema
 } from '@bluepy/protocol/schemas'
 
 export interface BackendOptions {
@@ -48,6 +52,8 @@ export type ProcessEvent =
   | { type: 'result'; repr: string; valueType: string; invocation: RpcId }
   | { type: 'debug.paused'; reason: 'breakpoint' | 'step' | 'pause'; frames: DebugFrame[]; invocation: RpcId }
   | { type: 'debug.resumed'; command: string }
+  | { type: 'test.started'; test: TestStartedParams }
+  | { type: 'test.finished'; result: TestCaseResult }
   | { type: 'invocation.started'; invocation: RpcId; method: string }
   | { type: 'invocation.finished'; invocation: RpcId; method: string; ok: boolean }
   /** Raw process stdout/stderr (crash output, C-level writes) – a fallback channel. */
@@ -284,6 +290,16 @@ export class BackendProcess extends EventEmitter {
       case 'debug.resumed': {
         const p = DebugResumedParamsSchema.safeParse(params)
         if (p.success) this.emitEvent({ type: 'debug.resumed', ...p.data })
+        return
+      }
+      case 'test.started': {
+        const p = TestStartedParamsSchema.safeParse(params)
+        if (p.success) this.emitEvent({ type: 'test.started', test: p.data })
+        return
+      }
+      case 'test.finished': {
+        const p = TestCaseResultSchema.safeParse(params)
+        if (p.success) this.emitEvent({ type: 'test.finished', result: p.data })
         return
       }
       case 'invocation.started': {

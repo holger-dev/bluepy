@@ -2,8 +2,15 @@ import { useEffect, useRef, useState, type JSX, type KeyboardEvent } from 'react
 import { useTranslation } from 'react-i18next'
 import { useStore, type CodePadEntry } from '../store'
 
-function ResultLine({ entry }: { entry: CodePadEntry }): JSX.Element | null {
+interface Props {
+  /** Open the inspector for a Code Pad result (`$<id>`). */
+  onInspect(name: string, title: string): void
+}
+
+function ResultLine({ entry, onInspect }: { entry: CodePadEntry; onInspect: Props['onInspect'] }): JSX.Element | null {
   const { t } = useTranslation()
+  const getObject = useStore((s) => s.getObject)
+  const setMessage = useStore((s) => s.setMessage)
   if (entry.pending) return <div className="codepad-result pending">…</div>
   if (entry.failure) return <div className="codepad-result error">{entry.failure}</div>
   const result = entry.result
@@ -17,16 +24,33 @@ function ResultLine({ entry }: { entry: CodePadEntry }): JSX.Element | null {
   }
   if (result.kind === 'statement') return <div className="codepad-result muted">{t('result.statement')}</div>
   if (result.value && !result.value.isNone) {
+    const ref = `$${entry.id}`
+    const toBench = (): void => {
+      void getObject(ref, [], null)
+        .then((r) => setMessage(r.ok && r.object ? `${r.object.name} ${t('codepad.onBench')}` : (r.error?.message ?? 'Fehler')))
+        .catch((e) => setMessage(e instanceof Error ? e.message : String(e)))
+    }
     return (
       <div className="codepad-result">
         <span className="value">{result.value.repr}</span> <span className="type">({result.value.type})</span>
+        {result.inspectable && (
+          <span className="codepad-object" title={t('codepad.objectHint')}>
+            <span className="codepad-object-icon" aria-hidden="true" />
+            <button type="button" className="link" onClick={() => onInspect(ref, entry.input.trim())}>
+              {t('dialog.inspect')}
+            </button>
+            <button type="button" className="link" onClick={toBench}>
+              {t('dialog.toBench')}
+            </button>
+          </span>
+        )}
       </div>
     )
   }
   return null
 }
 
-export function CodePad(): JSX.Element {
+export function CodePad({ onInspect }: Props): JSX.Element {
   const { t } = useTranslation()
   const entries = useStore((s) => s.codepad)
   const evalCodePad = useStore((s) => s.evalCodePad)
@@ -83,7 +107,7 @@ export function CodePad(): JSX.Element {
         {entries.map((entry) => (
           <div key={entry.id} className="codepad-entry">
             <pre className="codepad-input">{entry.input}</pre>
-            <ResultLine entry={entry} />
+            <ResultLine entry={entry} onInspect={onInspect} />
           </div>
         ))}
       </div>
@@ -92,6 +116,7 @@ export function CodePad(): JSX.Element {
         value={draft}
         rows={Math.min(6, Math.max(1, draft.split('\n').length))}
         placeholder={running ? t('codepad.placeholder') : t('codepad.unavailable')}
+        title={t('codepad.hint')}
         disabled={!running}
         spellCheck={false}
         onChange={(e) => setDraft(e.target.value)}

@@ -119,10 +119,46 @@ export const UserErrorSchema = z.object({
   offset: z.number().nullable().optional()
 })
 
+export const BenchObjectSchema = z.object({
+  name: z.string(),
+  type: z.string(),
+  module: z.string(),
+  repr: z.string(),
+  /** Expression that produced the object (for "Object Bench to Test Fixture"); null if unknown. */
+  code: z.string().nullable().optional()
+})
+
 export const CodePadResultSchema = z.object({
   kind: z.enum(['expression', 'statement', 'error']),
   value: ValueDescriptionSchema.optional(),
-  error: UserErrorSchema.optional()
+  error: UserErrorSchema.optional(),
+  /** The expression result is an object that can be inspected / put on the bench ("$<id>"). */
+  inspectable: z.boolean().optional(),
+  /** Bench after the statement: Code Pad variables bound to objects join it. */
+  bench: z.array(BenchObjectSchema).optional()
+})
+
+// ------------------------------------------------------------- unit tests
+
+export const TestStatusSchema = z.enum(['passed', 'failed', 'error', 'skipped'])
+
+export const TestCaseResultSchema = z.object({
+  id: z.string(),
+  file: z.string().nullable(),
+  className: z.string(),
+  method: z.string(),
+  status: TestStatusSchema,
+  message: z.string().nullable().optional(),
+  traceback: z.string().nullable().optional(),
+  line: z.number().nullable().optional(),
+  durationMs: z.number()
+})
+
+export const TestStartedParamsSchema = z.object({
+  id: z.string(),
+  file: z.string().nullable(),
+  className: z.string(),
+  method: z.string()
 })
 
 // --------------------------------------------------------------- debugger

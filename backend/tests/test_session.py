@@ -54,7 +54,7 @@ class SessionTest(unittest.TestCase):
         self.assertEqual(result["value"]["type"], "int")
         self.assertFalse(result["value"]["isNone"])
 
-        self.assertEqual(self.client.request("codepad.eval", {"code": "x = 21"}), {"kind": "statement"})
+        self.assertEqual(self.client.request("codepad.eval", {"code": "x = 21"}), {"kind": "statement", "bench": []})
         self.assertEqual(self.client.request("codepad.eval", {"code": "x * 2"})["value"]["repr"], "42")
         self.assertEqual(self.client.request("codepad.eval", {"code": "_"})["value"]["repr"], "42")
 

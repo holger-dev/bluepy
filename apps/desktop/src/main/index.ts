@@ -6,6 +6,8 @@ import { windows } from './windows'
 app.whenReady().then(async () => {
   registerIpc()
   await session.loadRecent()
+  await session.loadTheme()
+  await session.hub.loadSettings()
   installMenu()
   void windows.open('main')
   // Discovery first (status bar), then reopen the last project like BlueJ does.

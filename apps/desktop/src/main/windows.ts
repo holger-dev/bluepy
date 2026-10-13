@@ -12,13 +12,15 @@ import { loadSettings, saveSettings } from './settings'
 const DEFAULT_BOUNDS: Record<WindowRole, { width: number; height: number }> = {
   main: { width: 1200, height: 820 },
   diagram: { width: 760, height: 640 },
-  debugger: { width: 760, height: 560 }
+  debugger: { width: 760, height: 560 },
+  tests: { width: 640, height: 520 }
 }
 
 const TITLES: Record<WindowRole, string> = {
   main: 'BluePy',
   diagram: 'BluePy – Klassendiagramm',
-  debugger: 'BluePy – Debugger'
+  debugger: 'BluePy – Debugger',
+  tests: 'BluePy – Testergebnisse'
 }
 
 function boundsOnScreen(bounds: Rectangle | undefined): Rectangle | undefined {
@@ -89,7 +91,7 @@ export class WindowManager extends EventEmitter {
 
     if (!app.isPackaged && process.env.ELECTRON_RENDERER_URL) {
       void win.loadURL(`${process.env.ELECTRON_RENDERER_URL}?window=${role}`)
-      if (role === 'main') win.webContents.openDevTools({ mode: 'detach' })
+      if (role === 'main' && process.env.BLUEPY_DEVTOOLS) win.webContents.openDevTools({ mode: 'detach' })
     } else {
       void win.loadFile(path.join(__dirname, '../renderer/index.html'), { query: { window: role } })
     }

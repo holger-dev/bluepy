@@ -22,14 +22,14 @@ BluePy soll exakt die Funktionen von BlueJ bieten, aber für Python, lokal insta
 | 9 | **JSON-RPC 2.0 über localhost-Socket** (Electron ist Server, Backend verbindet sich mit Token); stdout/stderr/stdin des Nutzercodes werden im Backend umgeleitet und als Events geschickt | Steuerkanal und Programmausgabe getrennt; Abschnitte je Aufruf, stderr getrennt, `input()` als Terminal-Anfrage. |
 | 10 | **Nutzercode läuft im Hauptthread des Backends**, RPC-I/O im Nebenthread | `turtle`/`tkinter` brauchen auf macOS den Main-Thread. |
 | 11 | **`unittest`** als Testframework; Aufnahme erzeugt `self.assert…`-Code, Fixture → `setUp()` | Stdlib; pytest später optional als Runner. |
-| 12 | **isomorphic-git** (pure JS, HTTPS + Access Token, **kein SSH, keine git-CLI**) | Kein Git auf Schülerrechnern nötig; BlueJ 5.4 geht denselben Token-Weg. |
+| 12 | ~~isomorphic-git~~ → **kein Git in BluePy** (beschlossen 13.10.2026, Abend). Aufgaben und Abgaben laufen über den **BluePy-Hub** (eigener kleiner Abgabe-Server, docs/04), Export/Import als `.bluepy`-Paket als Fallback. | Git braucht Logins/Tokens auf Schülerrechnern und erklärt sich SuS nicht von selbst; der Hub kommt ohne Anmeldung aus (Aufgabencode + persönlicher Code). |
 | 13 | Doku: Docstrings im Editor, Projekt-Doku via **`pydoc`**; „Create App" via **`zipapp`** (.pyz), PyInstaller später optional | Stdlib. |
 | 14 | Bibliotheken: Projekt-venv + pip (v2), im Projektmodell von Anfang an vorgesehen | |
 | 15 | **i18next**, Deutsch + Englisch ab Tag 1 | |
 | 16 | **electron-builder**: Windows NSIS (per-User) + MSI + portable, macOS DMG (universal), Linux deb + AppImage; Updates via electron-updater (GitHub Releases) | Entspricht BlueJs Installer-Matrix. |
 | 17 | Signing: Apple Developer ID vorhanden (Notarisierung einplanen); Windows-Zertifikat **später** | |
 | 18 | **Lizenz GPL-3.0** | |
-| 19 | Qualität: Vitest (TS), `unittest` (Backend), Playwright (E2E gegen Electron), GitHub Actions Win/mac/Linux | |
+| 19 | Qualität: Vitest (TS), `unittest` (Backend), Playwright (E2E gegen Electron). **Keine CI auf Push** (beschlossen 13.10.2026); GitHub Actions nur als **Release-Workflow** (`release.yml`: Build + Signierung/Notarisierung + Installer ans Release) | Pushen soll einfach pushen; Qualität wird lokal geprüft (`pnpm typecheck`, `pnpm test`, `pnpm test:backend`). |
 
 ## Architektur
 
@@ -50,9 +50,9 @@ BluePy soll exakt die Funktionen von BlueJ bieten, aber für Python, lokal insta
                  └──────────────────┘
 ```
 
-- **Main-Prozess** besitzt Dateisystem, Projektmodell, Backend-Prozess, Pyright, Git. Renderer ist reine UI (`contextIsolation: true`, `nodeIntegration: false`, typed IPC über `contextBridge`).
+- **Main-Prozess** besitzt Dateisystem, Projektmodell, Backend-Prozess, Pyright, Test-Aufnahme/-Läufe, Hub-Client. Renderer ist reine UI (`contextIsolation: true`, `nodeIntegration: false`, typed IPC über `contextBridge`).
 - **Backend** ist das Gegenstück zur BlueJ-Debug-VM: lädt Module, hält die Objektleiste, führt Aufrufe aus, tract, testet. „Reset Python" = Prozess beenden und neu starten.
-- Ohne installiertes Python funktionieren: Projekt öffnen, Diagramm, Editor, Completion, Git. Erst „Compile"/Objekt erzeugen scheitert – mit erklärendem Dialog.
+- Ohne installiertes Python funktionieren: Projekt öffnen, Diagramm, Editor, Completion, Aufgabe holen/abgeben. Erst „Compile"/Objekt erzeugen scheitert – mit erklärendem Dialog.
 
 ## Fenstermodell (beschlossen 13.10.2026)
 
@@ -62,30 +62,18 @@ Anders als BlueJ ist **der Editor das Hauptfenster**; das Klassendiagramm bekomm
 |---|---|---|
 | **Editor** (Hauptfenster) | Editor-Tabs, Code Pad, Terminal, Statuszeile | Öffnet sich mit dem Projekt; Schließen beendet BluePy (bzw. schließt das Projekt, sobald es einen Projekt-Chooser gibt) |
 | **Klassendiagramm** | Klassendiagramm + Objektleiste, Toolbar (Neue Klasse, Pfeile, Compile) | Menü *Fenster ▸ Klassendiagramm*, Toolbar-Button, ⌘⇧D / Ctrl+Shift+D; beliebig schließ- und wieder öffnenbar; merkt sich Position und Größe |
-| Debugger, Inspektoren, Testergebnisse (M2–M4) | wie in BlueJ eigene Fenster | |
+| **Debugger** (M3), **Testergebnisse** (M4, ⌘⇧T) | wie in BlueJ eigene Fenster; das Testergebnis-Fenster öffnet sich bei Fehlschlägen oder mehreren Tests von selbst | |
+| Objektleiste | im Diagrammfenster unter dem Diagramm **und** im Editor-Fenster unter dem Code Pad (gleiche Leiste, beide einklappbar) | Objekte, die im Code Pad per Zuweisung entstehen (`k = Konto(p, 5)`), landen automatisch auf der Leiste (BlueJ zeigt dafür Objekt-Icons zum Ziehen) |
 
 Technik: Ein Renderer-Bundle, die Fensterrolle kommt per URL (`?window=main|diagram`). **Geteilter Zustand liegt im Main-Prozess** (`main/state.ts`: Backend-Status, Terminal-Verlauf, stdin-Zustand, später Objektleiste und Projektmodell); jedes Fenster lädt beim Start einen Snapshot und bekommt danach Events. Fensterverwaltung in `main/windows.ts`, Anwendungsmenü in `main/menu.ts` (Edit-Rollen sind nötig, damit ⌘C/⌘V auf macOS funktionieren).
 
-## Aufgaben-Workflow über Git (Roadmap, beschlossen 13.10.2026)
+## Aufgaben-Workflow: BluePy-Hub statt Git (beschlossen 13.10.2026)
 
-Ziel: Schülerinnen und Schüler holen sich Aufgaben aus einem **öffentlichen GitHub-Repo**, bearbeiten sie in BluePy und spielen ihre Lösung in **ihr eigenes Git-Repo** ein, dessen Remote in BluePy vorkonfiguriert ist – ein durchgängiger Arbeitsfluss ohne Git-Kommandozeile.
+Der zunächst geplante Git-Workflow (öffentliches Aufgaben-Repo, Push ins eigene Repo, OAuth Device Flow) ist **verworfen**: er braucht Anmeldungen und Tokens auf jedem Schülerrechner. Stattdessen ein eigener, winziger Abgabe-Server (**BluePy-Hub**) auf dem Hetzner-Server der Lehrkraft, ohne Logins: Lehrkraft veröffentlicht ein Projekt als Aufgabe (Beschreibung, Zeitfenster, Aufgabencode, Klasse), SuS holen sie per Code, geben per persönlichem Code ab, Lehrkraft sammelt alle Abgaben mit einem Klick ein und korrigiert direkt in BluePy. Details, Protokoll und Server-Setup: **docs/04-aufgaben-hub.md**. Fallback ohne Netz: Projekt als `.bluepy`-Paket exportieren/importieren.
 
-Aus Schülersicht:
-1. **Aufgabe holen…** – BluePy liest den Aufgabenkatalog der konfigurierten Quelle (Repo mit `aufgaben.json` oder ein Ordner je Aufgabe mit `package.bluepy`), zeigt Titel/Kurs/Schwierigkeit, kopiert die Aufgabe als neues Projekt in den Arbeitsordner und legt dort ein frisches Git-Repo an (ohne Historie des Aufgaben-Repos). Herkunft (`task.source`, `task.id`, `task.version`) steht in `package.bluepy`.
-2. **Bearbeiten** wie gewohnt.
-3. **Abgeben** – Commit + Push ins eigene Repo. Beim ersten Mal legt BluePy das Remote nach konfiguriertem Schema an (Provider, Namensschema wie `bluepy-{aufgabe}`, Sichtbarkeit privat). Login per **GitHub OAuth Device Flow** (kein Token-Gefummel) oder Token für GitLab/Gitea; Token liegt im OS-Schlüsselbund (`safeStorage`). Status-Anzeige wie BlueJ-Teamwork.
-4. **Aufgabe aktualisieren** – wenn die Lehrkraft nachbessert: Aufgabendateien mergen, Schülerdateien bleiben.
+## Oberfläche: Hell/Dunkel
 
-Vorkonfiguration durch Lehrkraft/Admin: `bluepy-schule.json` (analog `bluej.defs`), per Installer-Deployment oder *Konfiguration importieren* (URL/Datei):
-```json
-{
-  "aufgabenQuellen": [{ "name": "Informatik GymHum", "url": "https://github.com/<lehrkraft>/informatik-aufgaben" }],
-  "abgabe": { "provider": "github", "repoSchema": "bluepy-{aufgabe}", "sichtbarkeit": "private" }
-}
-```
-Lehrkraftseite (später): *Einsammeln* = Schüler-Repos klonen, ggf. mit Ergebnisübersicht; GitHub-Classroom-kompatibel, aber providerunabhängig (GitHub, GitLab, Gitea/Forgejo – auch selbst gehostet im Schulnetz).
-
-Technik: isomorphic-git (clone/commit/push über HTTPS + Token), Provider-REST-API für das Anlegen der Repos (GitHub `POST /user/repos`, GitLab `POST /projects`, Gitea `POST /user/repos`), registrierte OAuth-App „BluePy" für den Device Flow. Einordnung: **M5** (Git) wird zu „Git + Aufgaben-Workflow".
+Farbschema `system | light | dark` in den Einstellungen (Menü *Ansicht ▸ Farbschema*, Umschalt-Button in jeder Toolbar). Der Main-Prozess setzt `nativeTheme.themeSource`; die Renderer lesen `prefers-color-scheme` und setzen `data-theme` auf `<html>` – alle Farben sind CSS-Variablen (`styles.css`), der Editor nutzt dieselben Variablen für sein Chrome und schaltet die Syntaxfarben per Compartment um (`defaultHighlightStyle` hell, `oneDarkHighlightStyle` dunkel).
 
 ## Repo-Struktur
 
@@ -93,9 +81,10 @@ Technik: isomorphic-git (clone/commit/push über HTTPS + Token), Provider-REST-A
 bluepy/
   apps/desktop/        Electron-App: src/main, src/preload, src/renderer
   packages/protocol/   RPC- und IPC-Verträge (TS-Typen + zod) – eine Quelle der Wahrheit
-  packages/analyzer/   (M1) tree-sitter → Projektmodell
+  apps/desktop/src/shared/   reine Module für Main und Renderer (Python-Blockstruktur)
   backend/             bluepy_backend/ (Python, Stdlib) + tests/ (unittest)
-  docs/                Funktionsanalyse, ADRs, Protokoll
+  hub/                 (M5) BluePy-Hub: Abgabe-Server (Python, Docker) – siehe docs/04
+  docs/                Funktionsanalyse, ADRs, Protokoll, Hub-Design
 ```
 
 ## Meilensteine
@@ -104,9 +93,9 @@ bluepy/
 - **M1** *(fertig bis auf Pyright)* Projekt (`package.bluepy`, Neu/Öffnen/Zuletzt/Beispiel), Dateien im Editor mit Tabs und Speichern, Syntaxprüfung beim Tippen (Lezer), Compile (Syntax + Laden), Klassendiagramm mit Vererbung/Assoziation (Multiplizitäten, Komposition/Aggregation)/Uses, Live-Analyse beim Speichern
 - **M2** *(Kern fertig)* Objektleiste, Create Object / Method Call / Method Result, Inspektor (verschachtelt, Get auf die Leiste), Record method calls im Terminal, Modul ausführen (`__main__`). Offen: Pyright-Completion, Inspektoren als eigene Fenster, Drag von Objekten in Parameterfelder
 - **M3** *(fertig)* Debugger: Breakpoints in der Editor-Gutter, Halt (pausiert bei offenem Debugger-Fenster, bricht sonst ab), Step / Step Into / Step Out / Continue / Terminate, Aufrufsequenz, Klassen-/Instanz-/lokale Variablen mit Inspektor, eigenes Debugger-Fenster (⌘⇧B), aktuelle Zeile im Editor
-- **M4** Unit-Tests mit Aufnahme, Fixtures, Ergebnisfenster
-- **M5** Git (isomorphic-git) **+ Aufgaben-Workflow** (Aufgabe holen / Abgeben / Aktualisieren, Schulkonfiguration), Projekt-Doku, Create App, Use Library Class, Bibliotheken
-- **M6** Packaging, Signing/Notarisierung, i18n-Feinschliff, Interactive Tutorial, Accessibility
+- **M4** *(fertig)* Unit-Tests auf `unittest`: Testklasse anlegen, Test All / einzelne Tests, Testergebnis-Fenster mit Live-Ergebnissen, Zeile und gefiltertem Traceback, **Test-Aufnahme** (Interaktionen → Testmethode, Assertion-Panel im Ergebnisdialog, Fixture-Objekte als `self.`), Objektleiste ↔ Fixture (`setUp`) in beide Richtungen. Dazu: Code-Pad-Objekte auf der Leiste, Objektleiste im Editor-Fenster, Scope-Highlighting als Kästen, Dark Mode mit Umschalter, Release-Workflow statt CI
+- **M5** *(fertig)* **BluePy-Hub** (docs/04): Server in `hub/` (Stdlib, SQLite, Docker + Caddy), Paketformat `.bluepy` mit eigenem ZIP-Code, Aufgabe holen / abgeben / aktualisieren (persönlicher Code), Rückmeldung abrufen, Klassen, Veröffentlichen, Einsammeln + Korrekturmodus mit Notizen/Punkten und Tests über alle Abgaben (eigener Prozess je Abgabe, `backend/run_tests.py`), Export/Import. Landing Page in `site/` (wird vom Hub ausgeliefert)
+- **M6 = Version 1.0** *(fertig bis auf Signatur)* Pyright als LSP-Kindprozess (`main/lsp/pyright.ts`: Completion mit Resolve, Hover, Diagnostik nur bei sauberem Parse; Paket `pyright` per `asarUnpack`, läuft mit `ELECTRON_RUN_AS_NODE`), sechs Beispielprojekte (`examples/index.json`), Release-Workflow. Offen: Windows-Signatur, Interactive Tutorial, Accessibility
 
 ## Konsequenzen
 

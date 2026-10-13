@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2554d9">
+<title>BluePy</title>
+<meta name="description" content="BluePy ist die Lern-IDE für Python im Informatikunterricht: Klassendiagramm, Objektleiste, Inspektor, Debugger und Unit-Tests. Open Source, GPL-3.0.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=Source+Code+Pro:wght@400;600&display=swap">
+<style>
+  /* Layout: one left-aligned reading column (68ch) with a full-width IDE illustration;
+     the IDE's own colours (class yellow, object red, scope boxes) are the accents. */
+  :root {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --surface-2: #eef1f7;
+    --fg: #141a26;
+    --muted: #5b6474;
+    --line: #d9dfea;
+    --accent: #2554d9;
+    --accent-fg: #ffffff;
+    --class: #fff1b8;
+    --class-line: #b08f2a;
+    --object: #e11d48;
+    --ok: #15803d;
+    --scope-class: #d3efc9;
+    --scope-class-line: #a8d699;
+    --scope-def: #f8eeae;
+    --scope-def-line: #dccf78;
+    --scope-loop: #cfe0f7;
+    --scope-loop-line: #9fbdea;
+    --code-kw: #a626a4;
+    --code-def: #4078f2;
+    --code-str: #50a14f;
+    --code-num: #986801;
+    --font-display: "Sora", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "Source Code Pro", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f1217; --surface: #171b22; --surface-2: #1f242d; --fg: #e7eaf0; --muted: #9aa4b5; --line: #2b323e;
+      --accent: #6d93ff; --accent-fg: #0b1220; --class: #4a4320; --class-line: #d4b44a; --object: #fb7185; --ok: #4ade80;
+      --scope-class: #24402b; --scope-class-line: #3a6a45; --scope-def: #45411f; --scope-def-line: #776d32; --scope-loop: #203752; --scope-loop-line: #35618f;
+      --code-kw: #c678dd; --code-def: #61afef; --code-str: #98c379; --code-num: #d19a66;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f1217; --surface: #171b22; --surface-2: #1f242d; --fg: #e7eaf0; --muted: #9aa4b5; --line: #2b323e;
+    --accent: #6d93ff; --accent-fg: #0b1220; --class: #4a4320; --class-line: #d4b44a; --object: #fb7185; --ok: #4ade80;
+    --scope-class: #24402b; --scope-class-line: #3a6a45; --scope-def: #45411f; --scope-def-line: #776d32; --scope-loop: #203752; --scope-loop-line: #35618f;
+    --code-kw: #c678dd; --code-def: #61afef; --code-str: #98c379; --code-num: #d19a66;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 18px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.12; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 700; }
+  h2 { font-size: clamp(1.6rem, 3.2vw, 2.2rem); font-weight: 600; }
+  h3 { font-size: 1.1rem; font-weight: 600; }
+  p { margin: 0; }
+  code, pre, kbd { font-family: var(--font-mono); }
+  code { font-size: 0.92em; background: var(--surface-2); padding: 0.08em 0.4em; border-radius: 4px; }
+
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; }
+  .col { max-width: 68ch; }
+  .section { padding-block: 64px; }
+  .section + .section { border-top: 1px solid var(--line); }
+  .eyebrow { font-family: var(--font-display); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .stack { display: grid; gap: 18px; }
+  .lead { font-size: 1.25rem; color: var(--muted); }
+
+  /* nav */
+  .nav { display: flex; align-items: center; gap: 22px; padding-block: 18px; flex-wrap: wrap; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; color: var(--fg); text-decoration: none; }
+  .brand-mark { width: 26px; height: 26px; border-radius: 6px; background: var(--accent); position: relative; }
+  .brand-mark::after { content: ""; position: absolute; inset: 7px 6px 6px 7px; border-radius: 2px; background: var(--class); border: 1.5px solid var(--class-line); }
+  .nav-links { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; font-weight: 600; font-size: 0.95rem; }
+  .nav-links a { color: var(--fg); text-decoration: none; }
+  .nav-links a:hover { color: var(--accent); }
+
+  /* buttons */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 8px; font-family: var(--font-display); font-weight: 600; font-size: 1rem; text-decoration: none; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .btn-primary:hover { color: var(--accent-fg); filter: brightness(1.08); }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .note { font-size: 0.95rem; color: var(--muted); }
+
+  /* hero */
+  .hero { padding-block: 40px 48px; }
+  .hero .stack { gap: 22px; }
+  .platforms { display: flex; gap: 10px 18px; flex-wrap: wrap; font-size: 0.95rem; color: var(--muted); }
+  .platforms span::before { content: "✓ "; color: var(--ok); font-weight: 700; }
+
+  /* IDE illustration */
+  .shot { margin-top: 10px; }
+  .shot img { display: block; width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--line); box-shadow: 0 24px 60px -30px rgba(0,0,0,0.45); }
+  .shot figcaption { margin-top: 10px; font-size: 0.9rem; color: var(--muted); }
+  .ide { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: 0 24px 60px -30px rgba(0,0,0,0.45); overflow: hidden; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; }
+  .ide-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); font-family: var(--font-body); font-size: 12px; color: var(--muted); }
+  .dots { display: flex; gap: 6px; margin-right: 6px; }
+  .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); display: block; }
+  .ide-btn { padding: 2px 9px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); color: var(--fg); }
+  .ide-btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .ide-grid { display: grid; grid-template-columns: 150px minmax(0, 1.6fr) minmax(0, 1.1fr); grid-template-rows: auto auto; gap: 6px; padding: 6px; background: var(--bg); }
+  .ide-pane { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; min-width: 0; }
+  .ide-pane-title { padding: 3px 8px; font-family: var(--font-body); font-size: 10px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); border-bottom: 1px solid var(--line); }
+  .files { grid-row: 1 / span 2; }
+  .files ul { list-style: none; margin: 0; padding: 4px 0; font-family: var(--font-body); font-size: 12px; }
+  .files li { padding: 3px 10px; display: flex; gap: 8px; align-items: center; }
+  .files li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .files li.active { background: var(--surface-2); font-weight: 600; }
+  .editor { position: relative; }
+  .code { position: relative; padding: 8px 10px 10px 10px; margin: 0; white-space: pre; overflow-x: auto; }
+  .ln { display: inline-block; width: 22px; color: var(--muted); user-select: none; }
+  .k { color: var(--code-kw); } .d { color: var(--code-def); } .s { color: var(--code-str); } .n { color: var(--code-num); }
+  .scope { position: absolute; border-radius: 4px; z-index: 0; }
+  .scope.c { background: var(--scope-class); border: 1px solid var(--scope-class-line); }
+  .scope.d { background: var(--scope-def); border: 1px solid var(--scope-def-line); }
+  .scope.l { background: var(--scope-loop); border: 1px solid var(--scope-loop-line); }
+  .scope.inner-c { background: var(--surface); opacity: 0.75; }
+  .code .line { position: relative; z-index: 1; display: block; }
+  .diagram { position: relative; }
+  .diagram svg { display: block; width: 100%; height: auto; }
+  .bench { grid-column: 2 / span 2; }
+  .bench-strip { display: flex; gap: 8px; padding: 8px; background: var(--surface-2); flex-wrap: wrap; }
+  .obj { display: inline-flex; flex-direction: column; align-items: center; min-width: 84px; padding: 5px 10px; background: var(--object); color: #fff; border-radius: 4px; box-shadow: 2px 2px 0 rgba(0,0,0,0.25); font-size: 11.5px; }
+  .obj b { font-weight: 600; }
+  .term { grid-column: 1 / span 3; }
+  .term pre { margin: 0; padding: 6px 10px; font-size: 12px; }
+  .term .rec { color: var(--muted); font-style: italic; }
+  .term .res { color: var(--ok); }
+  @media (max-width: 760px) {
+    .ide-grid { grid-template-columns: minmax(0, 1fr); }
+    .files { display: none; }
+    .bench, .term { grid-column: auto; }
+  }
+
+  /* features */
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px 36px; margin-top: 36px; }
+  .feature { display: grid; gap: 8px; align-content: start; }
+  .feature .swatch { width: 34px; height: 10px; border-radius: 3px; }
+  .feature p { color: var(--muted); font-size: 1rem; }
+
+  /* workflow */
+  .steps { display: grid; gap: 0; margin-top: 32px; border-top: 1px solid var(--line); }
+  .step { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 16px; padding-block: 20px; border-bottom: 1px solid var(--line); }
+  .step-no { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; color: var(--accent); line-height: 1; font-variant-numeric: tabular-nums; }
+  .step p { color: var(--muted); font-size: 1rem; margin-top: 4px; }
+  .pill { display: inline-block; font-family: var(--font-display); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); margin-left: 8px; vertical-align: middle; }
+  .hub { margin-top: 44px; padding: 26px 28px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: grid; gap: 14px; }
+  .hub ol { margin: 0; padding-left: 22px; color: var(--muted); font-size: 1rem; display: grid; gap: 6px; }
+  .hub li::marker { color: var(--accent); font-weight: 600; }
+
+  /* support */
+  .support { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-top: 32px; }
+  .card { padding: 22px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); display: grid; gap: 10px; align-content: start; }
+  .card p { color: var(--muted); font-size: 1rem; }
+  .mail { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+  .mail code { font-size: 1rem; padding: 6px 10px; user-select: all; }
+  .copy { font-family: var(--font-display); font-size: 0.85rem; font-weight: 600; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+  .copy:hover { border-color: var(--accent); color: var(--accent); }
+
+  footer { padding-block: 32px 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.92rem; display: flex; gap: 10px 24px; flex-wrap: wrap; align-items: center; }
+  footer a { color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn, .copy, .nav-links a { transition: color 120ms ease, border-color 120ms ease, filter 120ms ease; }
+  }
+</style>
+
+</head>
+<body>
+<header class="wrap">
+  <nav class="nav" aria-label="Seite">
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span>BluePy</a>
+    <div class="nav-links">
+      <a href="#funktionen">Funktionen</a>
+      <a href="#unterricht">Im Unterricht</a>
+      <a href="#mitmachen">Mitmachen</a>
+      <a id="nav-github" href="https://github.com/holger-dev/bluepy" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+  <section class="wrap hero">
+    <div class="col stack">
+      <p class="eyebrow">Open Source · GPL-3.0 · Windows, macOS, Linux</p>
+      <h1>Objekte zum Anfassen.<br>Python zum Verstehen.</h1>
+      <p class="lead">BluePy ist die Lern-IDE für Python in deinem Informatikunterricht: Klassendiagramm, Objektleiste, Methoden anklicken, Inspektor, Debugger, Unit-Tests. Objektorientierung, die man sieht.</p>
+      <div class="actions">
+        <a id="btn-download" class="btn btn-primary" href="https://github.com/holger-dev/bluepy/releases" target="_blank" rel="noopener">Download</a>
+        <a id="btn-github" class="btn" href="https://github.com/holger-dev/bluepy" target="_blank" rel="noopener">Code auf GitHub</a>
+      </div>
+      <p class="note" id="download">Braucht nur ein installiertes Python ab 3.11. Kein Account, keine Cloud, nichts wird gesendet.</p>
+      <p class="note">macOS-Builds sind mit Apple Developer ID signiert und notarisiert. Windows: Free code signing provided by <a href="https://signpath.io" target="_blank" rel="noopener">SignPath.io</a>, certificate by <a href="https://signpath.org" target="_blank" rel="noopener">SignPath Foundation</a>.</p>
+      <div class="platforms"><span>Windows</span><span>macOS</span><span>Linux</span><span>Deutsch &amp; Englisch</span></div>
+    </div>
+
+    <figure class="shot">
+      <img id="screenshot" src="screenshot.png" alt="BluePy: Editor mit Scope-Highlighting, Klassendiagramm und Objektleiste" hidden>
+      <div class="ide" id="ide-illustration" aria-label="BluePy-Oberfläche, Darstellung">
+        <div class="ide-bar">
+          <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <span class="ide-btn">Klassendiagramm</span><span class="ide-btn">Debugger</span><span class="ide-btn primary">Compile</span>
+          <span style="margin-left:auto">bank</span>
+        </div>
+        <div class="ide-grid">
+          <div class="ide-pane files">
+            <div class="ide-pane-title">bank</div>
+            <ul>
+              <li>bank.py</li>
+              <li class="active">konto.py</li>
+              <li>person.py</li>
+              <li>sparkonto.py</li>
+              <li>test_konto.py</li>
+            </ul>
+          </div>
+          <div class="ide-pane editor">
+            <div class="ide-pane-title">konto.py</div>
+            <pre class="code"><span class="scope c" style="left:30px;top:8px;right:8px;height:200px"></span><span class="scope inner-c" style="left:56px;top:28px;right:16px;height:176px"></span><span class="scope d" style="left:56px;top:28px;right:16px;height:60px"></span><span class="scope d" style="left:56px;top:92px;right:16px;height:100px"></span><span class="scope l" style="left:84px;top:132px;right:24px;height:56px"></span><span class="line"><span class="ln">1</span><span class="k">class</span> <span class="d">Konto</span>:</span><span class="line"><span class="ln">2</span>    <span class="k">def</span> <span class="d">__init__</span>(self, inhaber: Person, stand: float = <span class="n">0.0</span>):</span><span class="line"><span class="ln">3</span>        self.inhaber = inhaber</span><span class="line"><span class="ln">4</span>        self.stand = stand</span><span class="line"><span class="ln">5</span></span><span class="line"><span class="ln">6</span>    <span class="k">def</span> <span class="d">einzahlen</span>(self, betrag: float) -&gt; <span class="d">None</span>:</span><span class="line"><span class="ln">7</span>        <span class="s">"""Zahlt betrag ein, wenn er positiv ist."""</span></span><span class="line"><span class="ln">8</span>        <span class="k">if</span> betrag &lt;= <span class="n">0</span>:</span><span class="line"><span class="ln">9</span>            <span class="k">raise</span> <span class="d">ValueError</span>(<span class="s">"Betrag muss positiv sein"</span>)</span><span class="line"><span class="ln">10</span>        self.stand += betrag</span></pre>
+          </div>
+          <div class="ide-pane diagram">
+            <div class="ide-pane-title">Klassendiagramm</div>
+            <svg viewBox="0 0 300 190" role="img" aria-label="Klassendiagramm mit Person, Konto, Sparkonto und Bank">
+              <defs>
+                <marker id="tri" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="9" markerHeight="9" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--surface)" stroke="var(--fg)" stroke-width="1.2"/></marker>
+                <marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10" fill="none" stroke="var(--fg)" stroke-width="1.2"/></marker>
+              </defs>
+              <g font-family="var(--font-body)" font-size="11" font-weight="600" text-anchor="middle" fill="var(--fg)">
+                <rect x="20" y="18" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="65" y="40">Person</text>
+                <rect x="190" y="18" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="235" y="40">Bank</text>
+                <rect x="105" y="86" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="150" y="108">Konto</text>
+                <rect x="105" y="146" width="90" height="34" rx="4" fill="var(--class)" stroke="var(--class-line)"/><text x="150" y="168">Sparkonto</text>
+              </g>
+              <g fill="none" stroke="var(--fg)" stroke-width="1.3">
+                <line x1="150" y1="146" x2="150" y2="120" marker-end="url(#tri)"/>
+                <line x1="125" y1="86" x2="80" y2="52" marker-end="url(#arr)"/>
+                <line x1="207.4" y1="58.5" x2="175" y2="86" marker-end="url(#arr)"/>
+                <path d="M215,52 L213.8,58.3 L207.4,58.5 L208.6,52.2 Z" fill="var(--fg)"/>
+              </g>
+              <g font-family="var(--font-mono)" font-size="9" fill="var(--muted)">
+                <text x="92" y="76">inhaber 1</text><text x="200" y="76">konten *</text>
+              </g>
+            </svg>
+          </div>
+          <div class="ide-pane bench">
+            <div class="ide-pane-title">Objektleiste</div>
+            <div class="bench-strip"><span class="obj"><b>person1</b>: Person</span><span class="obj"><b>konto1</b>: Konto</span><span class="obj"><b>bank1</b>: Bank</span></div>
+          </div>
+          <div class="ide-pane term">
+            <div class="ide-pane-title">Terminal</div>
+            <pre><span class="rec">konto1 = Konto(person1, 100)</span>
+<span class="rec">konto1.einzahlen(50)</span>
+<span class="rec">konto1.kontostand()</span>
+<span class="res">→ 150.0 (float)</span></pre>
+          </div>
+        </div>
+      </div>
+      <figcaption>Editor mit Scope-Highlighting, Klassendiagramm mit echten UML-Pfeilen, Objektleiste, Terminal mit aufgezeichneten Aufrufen.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap section" id="funktionen">
+    <div class="col stack">
+      <p class="eyebrow">Funktionen</p>
+      <h2>Objekte zum Anfassen, bevor eine Zeile main-Code geschrieben ist.</h2>
+      <p class="lead">Erst Objekte, dann Code: Schüler:innen sehen Klassen und Objekte, bevor sie die erste Zeile schreiben. Ohne Terminal-Gefummel, ohne <code>if __name__ == "__main__"</code> in der ersten Stunde.</p>
+    </div>
+    <div class="features">
+      <div class="feature"><span class="swatch" style="background:var(--class);border:1px solid var(--class-line)"></span><h3>Klassendiagramm</h3><p>Aus deinem Code, live beim Speichern. Vererbung, Assoziationen mit 1 : n, Komposition, Benutzt-Pfeile. Klassen verschieben, Layout bleibt im Projekt.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--object)"></span><h3>Objektleiste</h3><p>Rechtsklick auf eine Klasse → <code>new Konto(…)</code>. Rechtsklick aufs Objekt → Methode aufrufen, auch geerbte. Rückgabewert im Dialog und im Terminal.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--accent)"></span><h3>Inspektor</h3><p>Jedes Objekt aufklappen: Attribute, Typen, Werte. In verschachtelte Objekte und Listen reinklicken, Werte auf die Objektleiste holen.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--scope-loop);border:1px solid var(--scope-loop-line)"></span><h3>Code Pad</h3><p>Ausdrücke und Anweisungen sofort ausprobieren. Was du dort erzeugst, liegt auf der Objektleiste und lässt sich inspizieren.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--scope-def);border:1px solid var(--scope-def-line)"></span><h3>Debugger</h3><p>Breakpoint per Klick in die Zeile, Step / Step Into / Step Out, Variablen live. Halt stoppt jede Endlosschleife.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--ok)"></span><h3>Unit-Tests</h3><p>Testklasse anlegen, Tests per Klick aufnehmen: jede Interaktion wird Code, Assertions kommen aus dem Ergebnisdialog. Ergebnisfenster mit grünem oder rotem Balken. Basis: <code>unittest</code>.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--scope-class);border:1px solid var(--scope-class-line)"></span><h3>Scope-Highlighting</h3><p>Klasse grün, Methode gelb, Schleife blau, Verzweigung lila. Verschachtelte Blöcke als Kästen hinter dem Code, so sieht man Einrückung, bevor man sie versteht.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--surface-2);border:1px solid var(--line)"></span><h3>Sechs Beispielprojekte</h3><p>Python-Grundlagen mit Übungsaufgaben, Bank, Tierpark, Quest-Spiel, Datenstrukturen und Geheimschrift: vom ersten Tag bis zum Abitur, jedes mit Tests.</p></div>
+      <div class="feature"><span class="swatch" style="background:var(--muted)"></span><h3>Vervollständigung</h3><p>Pyright im Hintergrund: Methoden und Attribute beim Tippen, Docstrings beim Darüberfahren, Tippfehler in Namen sofort markiert. Dein installiertes Python (ab 3.11) genügt.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap section" id="unterricht">
+    <div class="col stack">
+      <p class="eyebrow">Im Unterricht</p>
+      <h2>Eine Stunde mit BluePy.</h2>
+    </div>
+    <div class="col steps">
+      <div class="step"><span class="step-no">1</span><div><h3>Projekt öffnen</h3><p>Dein Projektordner mit <code>.py</code>-Dateien oder das Beispiel „bank“. Compile, und das Klassendiagramm steht.</p></div></div>
+      <div class="step"><span class="step-no">2</span><div><h3>Objekte erzeugen, Methoden aufrufen</h3><p>Schüler:innen klicken sich durch Konstruktor und Methoden, sehen Rückgabewerte und Fehlermeldungen, inspizieren den Zustand. Erst dann schreiben sie Code.</p></div></div>
+      <div class="step"><span class="step-no">3</span><div><h3>Code ändern, sofort prüfen</h3><p>Editor mit Syntaxprüfung beim Tippen, Compile mit ⌘K, Objekte neu erzeugen. Breakpoint setzen, wenn etwas unklar ist.</p></div></div>
+      <div class="step"><span class="step-no">4</span><div><h3>Tests statt Behauptungen</h3><p>Testmethode aufnehmen, Assertion anklicken, Tests ausführen. Grün oder rot, für die ganze Klasse auf einen Blick.</p></div></div>
+    </div>
+    <div class="col hub">
+      <div><h3>Aufgaben verteilen und einsammeln</h3></div>
+      <p>Ohne Logins, ohne Git, ohne Mail. Der BluePy-Hub ist ein kleiner Server, auf dem Aufgaben und Abgaben liegen.</p>
+      <ol>
+        <li>Du veröffentlichst ein Projekt als Aufgabe: Beschreibung, Zeitfenster, Aufgabencode.</li>
+        <li>Schüler:innen holen die Aufgabe mit dem Code und geben per Klick ab. Persönlicher Code statt Account.</li>
+        <li>Du sammelst alle Abgaben mit einem Klick ein und korrigierst direkt in BluePy: durchklicken, Tests laufen lassen, Notizen und Punkte.</li>
+      </ol>
+      <p><strong>Mitmachen:</strong> Der Hub läuft bei mir. Schreib mir eine Mail, du bekommst deinen Lehrer-Schlüssel und legst los. Du willst die Daten bei dir? Der Hub ist Open Source und läuft als ein Docker-Container auf jedem kleinen Server, Anleitung liegt im Repo.</p>
+    </div>
+  </section>
+
+  <section class="wrap section" id="mitmachen">
+    <div class="col stack">
+      <p class="eyebrow">Mitmachen</p>
+      <h2>Von Lehrkräften, für Lehrkräfte.</h2>
+      <p class="lead">BluePy entsteht aus dem Unterricht heraus und bleibt frei. Keine Registrierung, kein Newsletter. Wenn du mitmachen willst, schreib eine Mail.</p>
+    </div>
+    <div class="support">
+      <div class="card">
+        <h3>Testen und melden</h3>
+        <p>Lade BluePy, nimm es mit in den Unterricht und sag, was fehlt oder klemmt. Fehler und Wünsche gehören auf GitHub.</p>
+        <a id="link-issues" href="https://github.com/holger-dev/bluepy/issues" target="_blank" rel="noopener">Issues auf GitHub</a>
+      </div>
+      <div class="card">
+        <h3>Mitentwickeln</h3>
+        <p>Du unterrichtest Informatik und willst Features bauen, Aufgaben beisteuern oder den Hub betreiben? Schreib mir, ich nehme dich ins Projekt auf.</p>
+        <div class="mail"><code id="mail-text">holger@heidkamp.dev</code><button class="copy" id="copy-mail" type="button">Kopieren</button></div>
+      </div>
+      <div class="card">
+        <h3>Spenden</h3>
+        <p>Server, Signaturzertifikate für Windows und macOS, Zeit. Jeder Beitrag hält BluePy kostenlos und ohne Werbung.</p>
+        <a id="btn-donate" class="btn btn-primary" href="#" hidden>Spenden</a>
+        <p id="donate-fallback">Spendenweg: kurz anschreiben, <code>holger@heidkamp.dev</code>.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <span>BluePy · GPL-3.0 · ein Projekt von Holger Heidkamp</span>
+  <a id="link-license" href="https://github.com/holger-dev/bluepy/blob/main/LICENSE" target="_blank" rel="noopener">Lizenz</a>
+  <a href="impressum.html">Impressum</a>
+  <a href="datenschutz.html">Datenschutz</a>
+</footer>
+
+<script>
+  // Links in one place – edit here.
+  const LINKS = {
+    github: 'https://github.com/holger-dev/bluepy',
+    download: 'https://github.com/holger-dev/bluepy/releases',
+    issues: 'https://github.com/holger-dev/bluepy/issues',
+    donate: '' // z. B. https://paypal.me/… oder https://github.com/sponsors/… – leer = Hinweis auf Mail
+  };
+  document.getElementById('nav-github').href = LINKS.github;
+  document.getElementById('btn-github').href = LINKS.github;
+  document.getElementById('btn-download').href = LINKS.download;
+  document.getElementById('link-issues').href = LINKS.issues;
+  const donate = document.getElementById('btn-donate');
+  if (LINKS.donate) { donate.href = LINKS.donate; donate.hidden = false; document.getElementById('donate-fallback').hidden = true; }
+
+  // Real screenshot replaces the CSS illustration as soon as screenshot.png exists next to this file.
+  const shot = document.getElementById('screenshot');
+  shot.addEventListener('load', () => { shot.hidden = false; document.getElementById('ide-illustration').hidden = true; });
+
+  const copy = document.getElementById('copy-mail');
+  copy.addEventListener('click', () => {
+    const text = document.getElementById('mail-text').textContent;
+    const done = () => { copy.textContent = 'Kopiert'; setTimeout(() => (copy.textContent = 'Kopieren'), 1500); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done).catch(() => select());
+    else select();
+    function select() {
+      const range = document.createRange(); range.selectNodeContents(document.getElementById('mail-text'));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "BluePy",
-    "milestone": "M3"
+    "milestone": "1.0"
   },
   "toolbar": {
     "newClass": "Neue Klasse…",
@@ -15,7 +15,10 @@
     "inheritanceArrow": "Vererbungs-Pfeil",
     "save": "Speichern",
     "compiling": "Compile läuft…",
-    "debuggerWindow": "Debugger"
+    "debuggerWindow": "Debugger",
+    "runTests": "Tests ausführen",
+    "testsRunning": "Tests laufen…",
+    "testsWindow": "Testergebnisse"
   },
   "diagram": {
     "title": "Klassendiagramm",
@@ -29,7 +32,7 @@
   },
   "bench": {
     "title": "Objektleiste",
-    "empty": "Noch keine Objekte. Rechtsklick auf eine Klasse → new …",
+    "empty": "Noch keine Objekte. Im Klassendiagramm: Rechtsklick auf eine Klasse → new …; im Code Pad: k = Konto(…)",
     "noBackend": "Python läuft nicht – erst Compile ausführen.",
     "count": "{{count}} Objekt(e)"
   },
@@ -39,9 +42,12 @@
   },
   "codepad": {
     "title": "Code Pad",
-    "placeholder": "Ausdruck oder Anweisung eingeben – Enter führt aus, Shift+Enter neue Zeile",
+    "placeholder": "Ausdruck oder Anweisung – Enter führt aus",
     "unavailable": "Code Pad ist erst verfügbar, wenn Python läuft.",
-    "clear": "Leeren"
+    "clear": "Leeren",
+    "onBench": "liegt auf der Objektleiste",
+    "objectHint": "Objekt – inspizieren oder auf die Objektleiste legen",
+    "hint": "Enter führt aus, Shift+Enter fügt eine neue Zeile ein, ↑/↓ blättern durch die Eingaben"
   },
   "terminal": {
     "title": "Terminal",
@@ -67,7 +73,9 @@
     "busy": {
       "open": "Projekt wird geöffnet…",
       "compile": "Compile…",
-      "run": "Programm läuft…"
+      "run": "Programm läuft…",
+      "tests": "Tests laufen…",
+      "submit": "Abgabe läuft…"
     }
   },
   "setup": {
@@ -120,11 +128,11 @@
   },
   "welcome": {
     "title": "Willkommen bei BluePy",
-    "intro": "BlueJ für Python: Klassen zeichnen, Objekte erzeugen, Methoden anklicken.",
+    "intro": "Python-Lern-IDE: Klassen zeichnen, Objekte erzeugen, Methoden anklicken.",
     "new": "Neues Projekt…",
     "open": "Projekt öffnen…",
-    "example": "Beispiel „bank“ öffnen",
-    "recent": "Zuletzt geöffnet"
+    "recent": "Zuletzt geöffnet",
+    "examples": "Beispielprojekte"
   },
   "menu": {
     "needsBackend": "Python läuft nicht",
@@ -179,5 +187,158 @@
     "static": "Klassenvariablen",
     "instance": "Instanzvariablen",
     "locals": "Lokale Variablen"
+  },
+  "theme": {
+    "label": "Farbschema",
+    "system": "System",
+    "light": "Hell",
+    "dark": "Dunkel",
+    "switchTo": "klicken für {{next}}"
+  },
+  "tests": {
+    "windowTitle": "Testergebnisse",
+    "testAll": "Alle Tests dieser Klasse ausführen",
+    "createMethod": "Testmethode aufnehmen…",
+    "createClass": "Testklasse anlegen",
+    "benchToFixture": "Objektleiste → Fixture (setUp)",
+    "fixtureToBench": "Fixture (setUp) → Objektleiste",
+    "noFixture": "kein setUp()",
+    "recordTitle": "Testmethode aufnehmen: {{name}}",
+    "recordIntro": "Alles, was du jetzt mit Objekten machst (erzeugen, Methoden aufrufen), wird als Python-Code in die neue Testmethode geschrieben. Bei Rückgabewerten kannst du im Ergebnisdialog eine Assertion festhalten.",
+    "recordBenchHint": "Die Objektleiste wird vorher geleert und mit der Fixture (setUp) der Testklasse gefüllt – so wie der Test später läuft.",
+    "methodName": "Name der Testmethode",
+    "nameInvalid": "Kein gültiger Python-Name.",
+    "nameNotTest": "Testmethoden müssen mit „test“ beginnen, sonst findet unittest sie nicht.",
+    "nameExists": "Diese Methode gibt es schon.",
+    "startRecording": "Aufnahme starten",
+    "recording": "Aufnahme: {{name}}",
+    "recordedCount": "{{count}} Anweisung(en)",
+    "endRecording": "Aufnahme beenden & speichern",
+    "cancelRecording": "Verwerfen",
+    "assertionAdd": "Als Assertion in {{method}} aufnehmen",
+    "expected": "Erwarteter Wert (Python-Ausdruck)",
+    "assertion": {
+      "equal": "assertEqual – ist gleich",
+      "almostEqual": "assertAlmostEqual – ungefähr gleich (float)",
+      "true": "assertTrue – ist wahr",
+      "false": "assertFalse – ist falsch",
+      "isNone": "assertIsNone – ist None",
+      "isNotNone": "assertIsNotNone – ist nicht None",
+      "is": "assertIs – ist dasselbe Objekt"
+    },
+    "rerun": "Erneut ausführen",
+    "counts": {
+      "tests": "Tests",
+      "passed": "bestanden",
+      "failed": "fehlgeschlagen",
+      "errors": "Fehler",
+      "skipped": "übersprungen"
+    },
+    "duration": "{{ms}} ms",
+    "runningTest": "läuft: {{name}}",
+    "noTests": "Keine Tests gefunden – Testmethoden heißen test_…",
+    "empty": "Noch kein Testlauf. Rechtsklick auf eine Testklasse im Klassendiagramm oder „Tests ausführen“.",
+    "selectHint": "Test anklicken für Details; Doppelklick öffnet den Quelltext.",
+    "showSource": "Quelltext anzeigen",
+    "status": {
+      "passed": "bestanden",
+      "failed": "fehlgeschlagen",
+      "error": "Fehler",
+      "skipped": "übersprungen"
+    }
+  },
+  "hub": {
+    "assignmentPane": "Aufgabe",
+    "settingsTitle": "Aufgaben-Hub",
+    "settingsIntro": "Der Hub ist der Server, von dem Aufgaben kommen und an den Abgaben gehen. Die Adresse bekommst du von deiner Lehrkraft – als Lehrkraft trägst du zusätzlich deinen Lehrer-Schlüssel ein.",
+    "url": "Hub-Adresse",
+    "personalCode": "Persönlicher Code (SuS)",
+    "personalHint": "Den 6-stelligen Code hast du von deiner Lehrkraft bekommen. BluePy merkt ihn sich auf diesem Gerät.",
+    "personalMissing": "Bitte deinen persönlichen Code eingeben.",
+    "teacherKey": "Lehrer-Schlüssel",
+    "teacherKeyHint": "Wird verschlüsselt im System-Schlüsselbund gespeichert. Erzeugen: auf dem Hub `python -m bluepy_hub teacher add \"Name\"`.",
+    "stored": "gespeichert",
+    "verifiedAs": "angemeldet als {{name}}",
+    "remove": "entfernen",
+    "save": "Speichern",
+    "noUrl": "Keine Hub-Adresse eingestellt.",
+    "openSettings": "Einstellungen öffnen",
+    "fetchTitle": "Aufgabe holen",
+    "taskCode": "Aufgabencode",
+    "taskCodeOptional": "Aufgabencode (optional)",
+    "codeAuto": "wird vom Hub vergeben",
+    "fetchHint": "Den Code hat deine Lehrkraft verteilt. Die Aufgabe landet in Dokumente/BluePy/Aufgaben und öffnet sich sofort.",
+    "fetch": "Holen",
+    "fetching": "Wird geholt…",
+    "fetched": "Aufgabe geöffnet: {{title}}",
+    "submitTitle": "Abgeben",
+    "notAssignment": "Das offene Projekt ist keine Aufgabe vom Hub. Hole zuerst eine Aufgabe (Aufgaben ▸ Aufgabe holen…).",
+    "submitFrom": "Abgabe ab",
+    "submitUntil": "Abgabe bis",
+    "windowAfter": "Abgabefrist vorbei",
+    "windowBefore": "Abgabe erst ab {{when}}",
+    "lastSubmitted": "Zuletzt abgegeben: {{when}}",
+    "submit": "Abgeben",
+    "submitting": "Wird abgegeben…",
+    "publishTitle": "Neue Aufgabe für SuS",
+    "title": "Titel",
+    "description": "Aufgabenbeschreibung (Markdown)",
+    "descriptionHint": "# Aufgabe\n\nBeschreibe, was zu tun ist. Überschriften mit #, Listen mit -, Code mit ```.",
+    "classes": "Klassen",
+    "noClasses": "Noch keine Klassen – zuerst Aufgaben ▸ Klassen verwalten…",
+    "excludeFiles": "Dateien im Paket",
+    "withTests": "Unit-Tests mitgeben",
+    "publish": "Veröffentlichen",
+    "publishing": "Wird hochgeladen…",
+    "publishedTitle": "Aufgabe veröffentlicht",
+    "publishedIntro": "Diesen Code an die SuS geben:",
+    "copy": "Kopieren",
+    "collectTitle": "Abgaben einsammeln",
+    "noTasks": "Noch keine Aufgaben veröffentlicht.",
+    "submissions": "Abgaben",
+    "collect": "Einsammeln",
+    "collecting": "Lädt…",
+    "collected": "{{count}} von {{total}} Abgaben geladen – Korrekturmodus ist aktiv.",
+    "window": {
+      "before": "noch nicht offen",
+      "open": "offen",
+      "after": "Frist vorbei"
+    },
+    "classesTitle": "Klassen verwalten",
+    "newClass": "Neue Klasse",
+    "className": "Name der Klasse",
+    "names": "Namen (eine Zeile pro Person)",
+    "namesHint": "Anna Müller\nBen Schulz\n…",
+    "addNames": "Namen hinzufügen",
+    "createClass": "Klasse anlegen",
+    "copyList": "Liste kopieren",
+    "removeClass": "Klasse löschen",
+    "removeClassConfirm": "Klasse mit allen Codes und Abgaben löschen?",
+    "listCopied": "Namen und Codes der Klasse {{name}} kopiert",
+    "codesHint": "Jede Person bekommt ihren Code einmal (Zettel, Lernplattform). BluePy merkt ihn sich beim ersten Abgeben.",
+    "reviewTitle": "Korrektur: {{title}}",
+    "reviewProgress": "{{seen}} bewertet · {{submitted}} von {{total}} abgegeben",
+    "reviewClose": "Korrektur beenden",
+    "reviewPick": "Abgabe wählen…",
+    "reviewPrev": "Vorherige Abgabe",
+    "reviewNext": "Nächste Abgabe",
+    "missing": "keine Abgabe",
+    "points": "Punkte",
+    "notes": "Notizen zur Abgabe…",
+    "sharedDevice": "gleiches Gerät",
+    "sharedDeviceHint": "Von diesem Gerät wurde auch unter einem anderen Code abgegeben.",
+    "late": "verspätet",
+    "noDescription": "Keine Beschreibung.",
+    "testsAll": "Tests für alle Abgaben",
+    "testsAllHint": "Führt die Unit-Tests der Aufgabe für jede Abgabe in einem eigenen Python-Prozess aus (eigene Testdateien der Lehrkraft gewinnen).",
+    "testsTable": "Ergebnistabelle",
+    "testsTableTitle": "Testergebnisse: {{title}}",
+    "student": "Name",
+    "copyCsv": "Als CSV kopieren",
+    "csvCopied": "Tabelle als CSV in die Zwischenablage kopiert",
+    "feedbackTitle": "Rückmeldung",
+    "noFeedback": "Noch keine Rückmeldung von deiner Lehrkraft.",
+    "noNotes": "(keine Notizen)",
+    "feedbackUpdated": "Stand: {{when}}"
   }
 }

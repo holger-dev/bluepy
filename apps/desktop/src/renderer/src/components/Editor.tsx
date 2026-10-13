@@ -1,11 +1,12 @@
 import { useEffect, useRef, type JSX } from 'react'
 import { useTranslation } from 'react-i18next'
-import { EditorState, type Extension } from '@codemirror/state'
+import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 import { indentWithTab } from '@codemirror/commands'
-import { indentUnit, syntaxTree } from '@codemirror/language'
+import { defaultHighlightStyle, indentUnit, syntaxHighlighting, syntaxTree } from '@codemirror/language'
 import { linter, lintGutter, setDiagnostics, type Diagnostic } from '@codemirror/lint'
 import { python } from '@codemirror/lang-python'
+import { oneDarkHighlightStyle } from '@codemirror/theme-one-dark'
 import { basicSetup } from 'codemirror'
 import type { CompileResult } from '@bluepy/protocol'
 import {
@@ -16,16 +17,42 @@ import {
   setBreakpointLines,
   setCurrentLine
 } from '../editor/breakpoints'
+import { lspDiagnostics, pyrightCompletions, pyrightHover } from '../editor/languageServer'
 import { scopeHighlight, scopeHighlightTheme } from '../editor/scopeHighlight'
 import { useStore } from '../store'
 
+/** Editor chrome follows the app's CSS variables, so light and dark mode switch without rebuilding states. */
 const editorTheme = EditorView.theme({
-  '&': { height: '100%', fontSize: '13px' },
+  '&': { height: '100%', fontSize: '13px', backgroundColor: 'var(--surface)', color: 'var(--text)' },
   '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.5' },
-  '.cm-gutters': { backgroundColor: 'transparent', borderRight: '1px solid var(--border)' },
+  '.cm-content': { caretColor: 'var(--text)' },
+  '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--text)' },
+  '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
+    backgroundColor: 'var(--editor-selection)'
+  },
+  '.cm-gutters': { backgroundColor: 'transparent', borderRight: '1px solid var(--border)', color: 'var(--muted)' },
   '.cm-activeLine': { backgroundColor: 'var(--active-line)' },
-  '.cm-activeLineGutter': { backgroundColor: 'var(--active-line)' }
+  '.cm-activeLineGutter': { backgroundColor: 'var(--active-line)' },
+  '&.cm-focused .cm-matchingBracket, .cm-matchingBracket': { backgroundColor: 'var(--editor-bracket)', outline: '1px solid var(--editor-bracket-outline)' },
+  '.cm-searchMatch': { backgroundColor: 'var(--editor-search)' },
+  '.cm-searchMatch.cm-searchMatch-selected': { backgroundColor: 'var(--editor-search-selected)' },
+  '.cm-selectionMatch': { backgroundColor: 'var(--editor-selection-match)' },
+  '.cm-tooltip': { backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border)', color: 'var(--text)' },
+  '.cm-tooltip-autocomplete ul li[aria-selected]': { backgroundColor: 'var(--accent)', color: 'var(--accent-text)' },
+  '.cm-panels': { backgroundColor: 'var(--surface-alt)', color: 'var(--text)' },
+  '.cm-panels.cm-panels-top': { borderBottom: '1px solid var(--border)' },
+  '.cm-panels.cm-panels-bottom': { borderTop: '1px solid var(--border)' },
+  '.cm-panel input, .cm-panel button, .cm-panel select': { backgroundColor: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' },
+  '.cm-foldPlaceholder': { backgroundColor: 'var(--surface-alt)', border: '1px solid var(--border)', color: 'var(--muted)' },
+  '.cm-lineNumbers .cm-gutterElement': { color: 'var(--muted)' }
 })
+
+/** Syntax colours: CodeMirror's default style in light mode, One Dark in dark mode. */
+const highlightCompartment = new Compartment()
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
+function highlightFor(dark: boolean): Extension {
+  return syntaxHighlighting(dark ? oneDarkHighlightStyle : defaultHighlightStyle)
+}
 
 /** Syntax errors from the Lezer parse plus the last Compile result of this file. */
 function diagnosticsFor(state: EditorState, file: string): Diagnostic[] {
@@ -51,7 +78,23 @@ function diagnosticsFor(state: EditorState, file: string): Diagnostic[] {
       message: `${compile.error.type}: ${compile.error.message}`
     })
   }
+  // Pyright only when the parse is clean – otherwise its cascade of errors hides the real one.
+  if (diagnostics.length === 0) diagnostics.push(...lspDiagnostics(state, useStore.getState().diagnostics[file] ?? []))
   return diagnostics
+}
+
+/** Keep Pyright's view of the document in sync (full text, debounced). */
+const syncTimers = new Map<string, ReturnType<typeof setTimeout>>()
+function scheduleSync(file: string, text: string): void {
+  const previous = syncTimers.get(file)
+  if (previous) clearTimeout(previous)
+  syncTimers.set(
+    file,
+    setTimeout(() => {
+      syncTimers.delete(file)
+      void window.bluepy.editor.didChange(file, text)
+    }, 300)
+  )
 }
 
 const states = new Map<string, EditorState>()
@@ -63,6 +106,9 @@ function createState(file: string, content: string, onChange: (content: string) 
     keymap.of([indentWithTab]),
     indentUnit.of('    '),
     python(),
+    highlightCompartment.of(highlightFor(darkQuery.matches)),
+    pyrightCompletions(file),
+    pyrightHover(file),
     scopeHighlight,
     scopeHighlightTheme,
     editorTheme,
@@ -70,9 +116,14 @@ function createState(file: string, content: string, onChange: (content: string) 
     lintGutter(),
     linter((view) => diagnosticsFor(view.state, file), { delay: 400 }),
     EditorView.updateListener.of((update) => {
-      if (update.docChanged) onChange(update.state.doc.toString())
+      if (update.docChanged) {
+        const text = update.state.doc.toString()
+        onChange(text)
+        scheduleSync(file, text)
+      }
     })
   ]
+  void window.bluepy.editor.didOpen(file, content)
   const state = EditorState.create({ doc: content, extensions })
   const lines = useStore.getState().breakpoints[file] ?? []
   return lines.length ? state.update({ effects: setBreakpointLines.of(lines) }).state : state
@@ -88,6 +139,7 @@ export function Editor(): JSX.Element {
   const setFileContent = useStore((s) => s.setFileContent)
   const clearReveal = useStore((s) => s.clearReveal)
   const compileVersion = useStore((s) => s.project?.compile)
+  const lspVersion = useStore((s) => s.diagnostics)
   const breakpoints = useStore((s) => s.breakpoints)
   const currentLine = useStore((s) => s.currentLine)
   const file = openFiles.find((f) => f.path === activeFile)
@@ -135,8 +187,18 @@ export function Editor(): JSX.Element {
     }
     shownFile.current = file.path
     view.setState(state)
+    view.dispatch({ effects: highlightCompartment.reconfigure(highlightFor(darkQuery.matches)) })
     view.focus()
   }, [file, setFileContent])
+
+  // Swap the syntax colours when the app switches between light and dark.
+  useEffect(() => {
+    const onChange = (): void => {
+      viewRef.current?.dispatch({ effects: highlightCompartment.reconfigure(highlightFor(darkQuery.matches)) })
+    }
+    darkQuery.addEventListener('change', onChange)
+    return () => darkQuery.removeEventListener('change', onChange)
+  }, [])
 
   // The store is the source of truth for breakpoints; every file state reports its marker lines on save.
   useEffect(() => {
@@ -178,12 +240,12 @@ export function Editor(): JSX.Element {
     clearReveal(file.path)
   }, [file, clearReveal])
 
-  // Refresh diagnostics when compile results arrive.
+  // Refresh diagnostics when compile results or Pyright diagnostics arrive.
   useEffect(() => {
     const view = viewRef.current
     if (!view || !file) return
     view.dispatch(setDiagnostics(view.state, diagnosticsFor(view.state, file.path)))
-  }, [compileVersion, file])
+  }, [compileVersion, lspVersion, file])
 
   return (
     <div className="pane-body editor">

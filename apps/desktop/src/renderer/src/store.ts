@@ -1,5 +1,7 @@
 import { create } from 'zustand'
 import type {
+  Assertion,
+  AssignmentState,
   BackendEvent,
   BackendStatus,
   BenchObject,
@@ -8,12 +10,20 @@ import type {
   DebugScope,
   DebugState,
   DebugVariables,
+  FixtureToBenchResult,
+  HubSettings,
   InspectResult,
+  LspDiagnostic,
   InvocationResult,
   LiveClassInfo,
   ProjectInfo,
   PythonDiscoveryResult,
+  RecordingState,
+  ReviewState,
   TerminalEntry,
+  TestClassDescription,
+  TestRunState,
+  ThemeSetting,
   WindowRole
 } from '@bluepy/protocol'
 import { currentBreakpointLines } from './editor/breakpoints'
@@ -62,6 +72,16 @@ interface AppState {
   breakpoints: Record<string, number[]>
   /** Line the debugger is paused at, shown in the editor. */
   currentLine: { file: string; line: number } | null
+  tests: TestRunState | null
+  recording: RecordingState | null
+  theme: ThemeSetting
+  assignment: AssignmentState | null
+  review: ReviewState | null
+  hub: HubSettings
+  /** Pyright diagnostics per file. */
+  diagnostics: Record<string, LspDiagnostic[]>
+  /** Which hub dialog the editor window shows (opened from the Aufgaben menu). */
+  hubDialog: 'fetch' | 'submit' | 'publish' | 'collect' | 'classes' | 'settings' | 'feedback' | 'reviewTests' | null
 
   bootstrap(role: WindowRole): Promise<void>
   rediscover(): Promise<void>
@@ -109,6 +129,38 @@ interface AppState {
   debugCommand(command: DebugCommand): Promise<void>
   debugVariables(frame: number): Promise<DebugVariables>
   debugInspect(frame: number, scope: DebugScope, name: string, path: (string | number)[]): Promise<DebugInspectResult>
+
+  // appearance
+  setTheme(theme: ThemeSetting): Promise<void>
+
+  // unit tests
+  /** Run all test classes of the project (BlueJ "Run Tests"). */
+  runAllTests(): Promise<void>
+  runTests(target: { files: string[]; className?: string; method?: string; label: string }): Promise<void>
+  createTestClass(classId: string): Promise<void>
+  describeTests(file: string, className: string): Promise<TestClassDescription>
+  startRecording(file: string, className: string, method: string): Promise<void>
+  recordAssertion(code: string, assertion: Assertion): Promise<void>
+  endRecording(save: boolean): Promise<void>
+  benchToFixture(file: string, className: string): Promise<void>
+  fixtureToBench(file: string, className: string): Promise<FixtureToBenchResult>
+
+  // hub / assignments
+  setHubDialog(dialog: AppState['hubDialog']): void
+  submitAssignment(): Promise<void>
+  updateAssignment(): Promise<void>
+  reviewRunTests(): Promise<void>
+  reviewOpen(index: number): Promise<void>
+  reviewNote(index: number, notes: string, points: string): Promise<void>
+  reviewClose(): Promise<void>
+  exportPackage(): Promise<void>
+  importPackage(): Promise<void>
+}
+
+/** Files of the project that contain unit-test classes (from the static model). */
+export function testFilesOf(project: ProjectInfo | null): string[] {
+  if (!project?.model) return []
+  return [...new Set(project.model.classes.filter((c) => c.stereotype === 'unittest').map((c) => c.file))]
 }
 
 let nextCodePadId = 1
@@ -135,6 +187,14 @@ export const useStore = create<AppState>((set, get) => ({
   debug: { paused: false, reason: null, frames: [], armed: false },
   breakpoints: {},
   currentLine: null,
+  tests: null,
+  recording: null,
+  theme: 'system',
+  assignment: null,
+  review: null,
+  hub: { url: '', hasTeacherKey: false, teacherName: null, hasPersonalCode: false },
+  diagnostics: {},
+  hubDialog: null,
 
   async bootstrap(role) {
     set({ role })
@@ -152,7 +212,14 @@ export const useStore = create<AppState>((set, get) => ({
       recentProjects: snapshot.recentProjects,
       debug: snapshot.debug,
       breakpoints: snapshot.breakpoints,
-      currentLine: snapshot.debug.paused && snapshot.debug.frames[0] ? { file: snapshot.debug.frames[0].file, line: snapshot.debug.frames[0].line } : null
+      currentLine: snapshot.debug.paused && snapshot.debug.frames[0] ? { file: snapshot.debug.frames[0].file, line: snapshot.debug.frames[0].line } : null,
+      tests: snapshot.tests,
+      recording: snapshot.recording,
+      theme: snapshot.theme,
+      assignment: snapshot.assignment,
+      review: snapshot.review,
+      hub: snapshot.hub,
+      diagnostics: snapshot.diagnostics
     })
     if (!snapshot.discovery) await get().rediscover()
   },
@@ -249,10 +316,27 @@ export const useStore = create<AppState>((set, get) => ({
         if (role === 'main') void get().openFile(event.file, event.line)
         break
       case 'menu':
+        if (event.action === 'runTests') {
+          if (role === 'main') void get().runAllTests()
+          break
+        }
         if (role !== 'main') break
+        if (event.action.startsWith('hub.') || event.action.startsWith('package.')) {
+          if (event.action === 'package.export') void get().exportPackage()
+          else if (event.action === 'package.import') void get().importPackage()
+          else if (event.action === 'hub.update') void get().updateAssignment()
+          else set({ hubDialog: event.action.slice(4) as AppState['hubDialog'] })
+          break
+        }
         if (event.action === 'save' && get().activeFile) void get().saveFile(get().activeFile as string)
-        else if (event.action === 'saveAll') void get().saveAll()
-        else if (event.action === 'compile') void get().compile()
+        else if (event.action === 'saveAll') {
+          const token = event.token
+          void get()
+            .saveAll()
+            .finally(() => {
+              if (token !== undefined) void window.bluepy.editor.flushed(token)
+            })
+        } else if (event.action === 'compile') void get().compile()
         break
       case 'debug': {
         const top = event.debug.paused ? event.debug.frames[0] : undefined
@@ -262,6 +346,33 @@ export const useStore = create<AppState>((set, get) => ({
       }
       case 'breakpoints':
         set({ breakpoints: event.breakpoints })
+        break
+      case 'tests':
+        set({ tests: event.tests })
+        break
+      case 'recording':
+        set({ recording: event.recording })
+        break
+      case 'theme':
+        set({ theme: event.theme })
+        break
+      case 'assignment':
+        set({ assignment: event.assignment })
+        break
+      case 'review':
+        set({ review: event.review })
+        break
+      case 'hub':
+        set({ hub: event.hub })
+        break
+      case 'diagnostics':
+        set((state) => {
+          if (event.diagnostics.length === 0) {
+            const { [event.file]: _gone, ...rest } = state.diagnostics
+            return { diagnostics: rest }
+          }
+          return { diagnostics: { ...state.diagnostics, [event.file]: event.diagnostics } }
+        })
         break
       case 'invocation.started':
       case 'invocation.finished':
@@ -275,7 +386,7 @@ export const useStore = create<AppState>((set, get) => ({
     const update = (patch: Partial<CodePadEntry>): void =>
       set((state) => ({ codepad: state.codepad.map((e) => (e.id === id ? { ...e, ...patch, pending: false } : e)) }))
     try {
-      const result = await window.bluepy.codepad.eval(code)
+      const result = await window.bluepy.codepad.eval(code, id)
       update({ result })
     } catch (error) {
       update({ failure: error instanceof Error ? error.message : String(error) })
@@ -353,6 +464,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   closeFile(path) {
+    void window.bluepy.editor.didClose(path)
     set((state) => {
       const openFiles = state.openFiles.filter((f) => f.path !== path)
       const activeFile = state.activeFile === path ? (openFiles[openFiles.length - 1]?.path ?? null) : state.activeFile
@@ -484,5 +596,196 @@ export const useStore = create<AppState>((set, get) => ({
 
   async debugInspect(frame, scope, name, path) {
     return window.bluepy.debug.inspect(frame, scope, name, path)
+  },
+
+  // --------------------------------------------------------- appearance
+
+  async setTheme(theme) {
+    set({ theme })
+    await window.bluepy.app.setTheme(theme)
+  },
+
+  // --------------------------------------------------------- unit tests
+
+  async runAllTests() {
+    const files = testFilesOf(get().project)
+    if (files.length === 0) {
+      set({ message: 'Keine Testklassen im Projekt.' })
+      return
+    }
+    await get().runTests({ files, label: 'Alle Tests' })
+  },
+
+  async runTests(target) {
+    set({ busy: 'tests', message: null })
+    try {
+      const summary = await window.bluepy.tests.run(target)
+      const problems = summary.failed + summary.errors
+      set({
+        message:
+          problems === 0
+            ? `✓ ${summary.total} Test(s) bestanden (${target.label})`
+            : `✗ ${problems} von ${summary.total} Test(s) fehlgeschlagen (${target.label})`
+      })
+      if (problems > 0 || summary.total > 1) await window.bluepy.windows.open('tests')
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    } finally {
+      set({ busy: null })
+    }
+  },
+
+  async createTestClass(classId) {
+    try {
+      const { file } = await window.bluepy.tests.createTestClass(classId)
+      set({ message: `Testklasse angelegt: ${file}` })
+      await window.bluepy.editor.open(file)
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    }
+  },
+
+  async describeTests(file, className) {
+    return window.bluepy.tests.describe(file, className)
+  },
+
+  async startRecording(file, className, method) {
+    try {
+      await window.bluepy.tests.startRecording(file, className, method)
+      set({ message: `Aufnahme läuft: ${className}.${method}` })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    }
+  },
+
+  async recordAssertion(code, assertion) {
+    await window.bluepy.tests.recordAssertion(code, assertion)
+  },
+
+  async endRecording(save) {
+    const recording = get().recording
+    try {
+      await window.bluepy.tests.endRecording(save)
+      if (recording) set({ message: save ? `Testmethode gespeichert: ${recording.className}.${recording.method}` : 'Aufnahme verworfen' })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    }
+  },
+
+  async benchToFixture(file, className) {
+    try {
+      await window.bluepy.tests.benchToFixture(file, className)
+      set({ message: `setUp() von ${className} aus der Objektleiste geschrieben` })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    }
+  },
+
+  async fixtureToBench(file, className) {
+    const result = await window.bluepy.tests.fixtureToBench(file, className)
+    set({ message: result.ok ? `Fixture von ${className} auf der Objektleiste (${result.names.length} Objekt(e))` : `setUp() fehlgeschlagen: ${result.error?.message ?? ''}` })
+    return result
+  },
+
+  // ------------------------------------------------------ hub / assignments
+
+  setHubDialog(dialog) {
+    set({ hubDialog: dialog })
+  },
+
+  async submitAssignment() {
+    if (!get().hub.hasPersonalCode) {
+      set({ hubDialog: 'submit' })
+      return
+    }
+    set({ busy: 'submit', message: null })
+    try {
+      const result = await window.bluepy.hub.submit()
+      const time = new Date(result.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      set({ message: result.late ? `Abgabe angenommen (verspätet) – ${result.name}, ${time}` : `✓ Abgabe angenommen – ${result.name}, ${time}` })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    } finally {
+      set({ busy: null })
+    }
+  },
+
+  async updateAssignment() {
+    set({ busy: 'open', message: null })
+    try {
+      const result = await window.bluepy.hub.updateTask()
+      if (result.upToDate) set({ message: 'Die Aufgabe ist aktuell.' })
+      else {
+        const skipped = result.skipped.length ? ` – ${result.skipped.length} von dir geänderte Datei(en) behalten: ${result.skipped.join(', ')}` : ''
+        set({ message: `Aufgabe auf Version ${result.version} aktualisiert: ${result.updated.length} Datei(en)${skipped}` })
+        for (const file of result.updated) {
+          const open = get().openFiles.find((f) => f.path === file)
+          if (open) {
+            const content = await window.bluepy.project.readFile(file)
+            set((state) => ({ openFiles: state.openFiles.map((f) => (f.path === file ? { ...f, content, savedContent: content } : f)) }))
+          }
+        }
+      }
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    } finally {
+      set({ busy: null })
+    }
+  },
+
+  async reviewRunTests() {
+    set({ busy: 'tests', message: null })
+    try {
+      await window.bluepy.hub.reviewRunTests()
+      set({ hubDialog: 'reviewTests' })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    } finally {
+      set({ busy: null })
+    }
+  },
+
+  async reviewOpen(index) {
+    set({ busy: 'open' })
+    try {
+      await window.bluepy.hub.reviewOpen(index)
+      set({ openFiles: [], activeFile: null, codepad: [] })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    } finally {
+      set({ busy: null })
+    }
+  },
+
+  async reviewNote(index, notes, points) {
+    set((state) => ({
+      review: state.review ? { ...state.review, students: state.review.students.map((s, i) => (i === index ? { ...s, notes, points } : s)) } : null
+    }))
+    await window.bluepy.hub.reviewNote(index, notes, points)
+  },
+
+  async reviewClose() {
+    await window.bluepy.hub.reviewClose()
+  },
+
+  async exportPackage() {
+    try {
+      const file = await window.bluepy.hub.exportPackage()
+      if (file) set({ message: `Paket gespeichert: ${file}` })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    }
+  },
+
+  async importPackage() {
+    set({ busy: 'open' })
+    try {
+      const project = await window.bluepy.hub.importPackage()
+      if (project) set({ openFiles: [], activeFile: null, codepad: [], message: `Importiert: ${project.name}` })
+    } catch (error) {
+      set({ message: error instanceof Error ? error.message : String(error) })
+    } finally {
+      set({ busy: null })
+    }
   }
 }))

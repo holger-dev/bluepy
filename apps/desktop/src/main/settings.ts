@@ -2,7 +2,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { app, type Rectangle } from 'electron'
-import type { WindowRole } from '@bluepy/protocol'
+import type { ThemeSetting, WindowRole } from '@bluepy/protocol'
 
 export interface Settings {
   /** Manually chosen interpreter; null = automatic. */
@@ -11,9 +11,19 @@ export interface Settings {
   windowBounds?: Partial<Record<WindowRole, Rectangle>>
   recentProjects: string[]
   reopenLastProject: boolean
+  theme: ThemeSetting
+  /** BluePy-Hub (docs/04): URL, teacher key and personal code (encrypted with safeStorage when available). */
+  hubUrl?: string | null
+  hubTeacherKey?: string | null
+  hubTeacherName?: string | null
+  hubPersonalCode?: string | null
+  /** Anonymous device id sent with submissions (same device, two codes → flagged for the teacher). */
+  deviceId?: string | null
+  /** Last accepted submission per task code. */
+  lastSubmissions?: Record<string, string>
 }
 
-const DEFAULTS: Settings = { pythonPath: null, language: null, recentProjects: [], reopenLastProject: true }
+const DEFAULTS: Settings = { pythonPath: null, language: null, recentProjects: [], reopenLastProject: true, theme: 'system' }
 
 function settingsFile(): string {
   return path.join(app.getPath('userData'), 'settings.json')

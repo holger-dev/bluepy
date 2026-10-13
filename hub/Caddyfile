@@ -1,0 +1,8 @@
+# Domain comes from HUB_DOMAIN in .env (e.g. bluepy.heidkamp.dev); Caddy fetches the certificate itself.
+{$HUB_DOMAIN} {
+    encode gzip
+    request_body {
+        max_size 40MB
+    }
+    reverse_proxy hub:8080
+}

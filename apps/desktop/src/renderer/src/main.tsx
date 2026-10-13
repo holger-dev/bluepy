@@ -5,6 +5,7 @@ import { ErrorBoundary, FatalError } from './components/ErrorBoundary'
 import { DebuggerWindow } from './windows/DebuggerWindow'
 import { DiagramWindow } from './windows/DiagramWindow'
 import { MainWindow } from './windows/MainWindow'
+import { TestResultsWindow } from './windows/TestResultsWindow'
 import './i18n'
 import './styles.css'
 
@@ -15,8 +16,17 @@ const root = createRoot(container)
 /** Which window this renderer instance is – chosen by the main process via the URL. */
 function windowRole(): WindowRole {
   const role = new URLSearchParams(window.location.search).get('window')
-  return role === 'diagram' || role === 'debugger' ? role : 'main'
+  return role === 'diagram' || role === 'debugger' || role === 'tests' ? role : 'main'
 }
+
+// Light/dark follows Electron's nativeTheme (View ▸ Appearance), which the
+// renderer sees through prefers-color-scheme; the attribute drives the CSS.
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)')
+const applyTheme = (): void => {
+  document.documentElement.dataset.theme = darkQuery.matches ? 'dark' : 'light'
+}
+applyTheme()
+darkQuery.addEventListener('change', applyTheme)
 
 if (typeof window.bluepy === 'undefined') {
   // The preload script did not run (or crashed): nothing else can work.
@@ -34,7 +44,9 @@ if (typeof window.bluepy === 'undefined') {
   document.body.dataset.window = role
   root.render(
     <React.StrictMode>
-      <ErrorBoundary>{role === 'diagram' ? <DiagramWindow /> : role === 'debugger' ? <DebuggerWindow /> : <MainWindow />}</ErrorBoundary>
+      <ErrorBoundary>
+        {role === 'diagram' ? <DiagramWindow /> : role === 'debugger' ? <DebuggerWindow /> : role === 'tests' ? <TestResultsWindow /> : <MainWindow />}
+      </ErrorBoundary>
     </React.StrictMode>
   )
 }

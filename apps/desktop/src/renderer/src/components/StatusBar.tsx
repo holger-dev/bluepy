@@ -11,6 +11,7 @@ export function StatusBar(): JSX.Element {
   const detail = useStore((s) => s.backendDetail)
   const message = useStore((s) => s.message)
   const busy = useStore((s) => s.busy)
+  const recording = useStore((s) => s.recording)
   const setSetupOpen = useStore((s) => s.setSetupOpen)
   const [info, setInfo] = useState<AppInfo | null>(null)
 
@@ -38,6 +39,7 @@ export function StatusBar(): JSX.Element {
         {status === 'crashed' && detailLabel ? ` – ${detailLabel}` : ''}
       </span>
       {busy && <span className="chip working">{t(`status.busy.${busy}`)}</span>}
+      {recording && <span className="chip recording">● {recording.className}.{recording.method}</span>}
       {message && <span className="status-message">{message}</span>}
       <span className="statusbar-spacer" />
       {info && (

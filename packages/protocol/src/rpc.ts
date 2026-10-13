@@ -47,12 +47,43 @@ export type EnvInfo = z.infer<typeof S.EnvInfoSchema>
 export type ValueDescription = z.infer<typeof S.ValueDescriptionSchema>
 export type UserError = z.infer<typeof S.UserErrorSchema>
 export type CodePadResult = z.infer<typeof S.CodePadResultSchema>
+export type TestStatus = z.infer<typeof S.TestStatusSchema>
+export type TestCaseResult = z.infer<typeof S.TestCaseResultSchema>
+export type TestStartedParams = z.infer<typeof S.TestStartedParamsSchema>
+
+export interface TestRunSummary {
+  total: number
+  passed: number
+  failed: number
+  errors: number
+  skipped: number
+  durationMs: number
+  results: TestCaseResult[]
+  bench: BenchObject[]
+}
+
+export interface TestClassDescription {
+  className: string
+  line: number
+  tests: { name: string; line: number }[]
+  hasFixture: boolean
+  fixtureNames: string[]
+  /** name -> expression assigned in setUp (self. stripped) */
+  fixtureCode: Record<string, string>
+}
+
+export interface FixtureToBenchResult {
+  ok: boolean
+  error?: UserError
+  bench: BenchObject[]
+  names: string[]
+}
 
 /** Request methods the main process may send, with their param/result types. */
 export interface RpcMethods {
   ping: { params: Record<string, never>; result: { pong: true } }
   'env.info': { params: Record<string, never>; result: EnvInfo }
-  'codepad.eval': { params: { code: string }; result: CodePadResult }
+  'codepad.eval': { params: { code: string; id?: number }; result: CodePadResult }
   halt: { params: Record<string, never>; result: { halted: boolean } }
   shutdown: { params: Record<string, never>; result: { ok: true } }
   'project.open': { params: { dir: string }; result: { ok: true; cwd: string } }
@@ -69,6 +100,10 @@ export interface RpcMethods {
   'object.remove': { params: { name: string }; result: { ok: true; bench: BenchObject[] } }
   'bench.list': { params: Record<string, never>; result: { bench: BenchObject[] } }
   'bench.suggestName': { params: { className: string }; result: { name: string } }
+  'bench.clear': { params: Record<string, never>; result: { ok: true; bench: BenchObject[] } }
+  'tests.describe': { params: { file: string; className: string }; result: TestClassDescription }
+  'tests.run': { params: { files: string[]; className?: string; method?: string }; result: TestRunSummary }
+  'tests.fixtureToBench': { params: { file: string; className: string }; result: FixtureToBenchResult }
   'debug.setBreakpoints': { params: { file: string; lines: number[] }; result: { ok: true } }
   'debug.clearBreakpoints': { params: Record<string, never>; result: { ok: true } }
   'debug.arm': { params: { enabled: boolean }; result: { ok: true; armed: boolean } }

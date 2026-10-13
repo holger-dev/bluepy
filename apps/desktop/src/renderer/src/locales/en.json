@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "BluePy",
-    "milestone": "M3"
+    "milestone": "1.0"
   },
   "toolbar": {
     "newClass": "New Class…",
@@ -15,7 +15,10 @@
     "inheritanceArrow": "Inheritance arrow",
     "save": "Save",
     "compiling": "Compiling…",
-    "debuggerWindow": "Debugger"
+    "debuggerWindow": "Debugger",
+    "runTests": "Run Tests",
+    "testsRunning": "Running tests…",
+    "testsWindow": "Test results"
   },
   "diagram": {
     "title": "Class diagram",
@@ -29,7 +32,7 @@
   },
   "bench": {
     "title": "Object bench",
-    "empty": "No objects yet. Right-click a class → new …",
+    "empty": "No objects yet. Class diagram: right-click a class → new …; Code Pad: k = Konto(…)",
     "noBackend": "Python is not running – run Compile first.",
     "count": "{{count}} object(s)"
   },
@@ -39,9 +42,12 @@
   },
   "codepad": {
     "title": "Code Pad",
-    "placeholder": "Type an expression or statement – Enter runs it, Shift+Enter adds a line",
+    "placeholder": "Expression or statement – Enter runs it",
     "unavailable": "The Code Pad needs a running Python.",
-    "clear": "Clear"
+    "clear": "Clear",
+    "onBench": "is on the object bench",
+    "objectHint": "Object – inspect or put it on the object bench",
+    "hint": "Enter runs, Shift+Enter inserts a new line, ↑/↓ browse earlier input"
   },
   "terminal": {
     "title": "Terminal",
@@ -67,7 +73,9 @@
     "busy": {
       "open": "Opening project…",
       "compile": "Compiling…",
-      "run": "Running…"
+      "run": "Running…",
+      "tests": "Running tests…",
+      "submit": "Submitting…"
     }
   },
   "setup": {
@@ -120,11 +128,11 @@
   },
   "welcome": {
     "title": "Welcome to BluePy",
-    "intro": "BlueJ for Python: draw classes, create objects, click methods.",
+    "intro": "Python teaching IDE: draw classes, create objects, click methods.",
     "new": "New project…",
     "open": "Open project…",
-    "example": "Open example “bank”",
-    "recent": "Recent projects"
+    "recent": "Recent projects",
+    "examples": "Example projects"
   },
   "menu": {
     "needsBackend": "Python not running",
@@ -179,5 +187,158 @@
     "static": "Static variables",
     "instance": "Instance variables",
     "locals": "Local variables"
+  },
+  "theme": {
+    "label": "Appearance",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "switchTo": "click for {{next}}"
+  },
+  "tests": {
+    "windowTitle": "Test results",
+    "testAll": "Test All",
+    "createMethod": "Create Test Method…",
+    "createClass": "Create Test Class",
+    "benchToFixture": "Object Bench to Test Fixture (setUp)",
+    "fixtureToBench": "Test Fixture (setUp) to Object Bench",
+    "noFixture": "no setUp()",
+    "recordTitle": "Create test method: {{name}}",
+    "recordIntro": "Everything you do with objects now (create, call methods) is written as Python code into the new test method. For return values the result dialog offers an assertion.",
+    "recordBenchHint": "The object bench is cleared first and filled with the fixture (setUp) of the test class – just like the test will run later.",
+    "methodName": "Test method name",
+    "nameInvalid": "Not a valid Python name.",
+    "nameNotTest": "Test methods must start with “test”, otherwise unittest does not find them.",
+    "nameExists": "This method already exists.",
+    "startRecording": "Start recording",
+    "recording": "Recording: {{name}}",
+    "recordedCount": "{{count}} statement(s)",
+    "endRecording": "End recording & save",
+    "cancelRecording": "Discard",
+    "assertionAdd": "Record as assertion in {{method}}",
+    "expected": "Expected value (Python expression)",
+    "assertion": {
+      "equal": "assertEqual – equals",
+      "almostEqual": "assertAlmostEqual – approximately equal (float)",
+      "true": "assertTrue – is true",
+      "false": "assertFalse – is false",
+      "isNone": "assertIsNone – is None",
+      "isNotNone": "assertIsNotNone – is not None",
+      "is": "assertIs – is the same object"
+    },
+    "rerun": "Run again",
+    "counts": {
+      "tests": "Tests",
+      "passed": "passed",
+      "failed": "failures",
+      "errors": "errors",
+      "skipped": "skipped"
+    },
+    "duration": "{{ms}} ms",
+    "runningTest": "running: {{name}}",
+    "noTests": "No tests found – test methods are named test_…",
+    "empty": "No test run yet. Right-click a test class in the class diagram or use “Run Tests”.",
+    "selectHint": "Click a test for details; double-click opens the source.",
+    "showSource": "Show source",
+    "status": {
+      "passed": "passed",
+      "failed": "failed",
+      "error": "error",
+      "skipped": "skipped"
+    }
+  },
+  "hub": {
+    "assignmentPane": "Assignment",
+    "settingsTitle": "Assignment hub",
+    "settingsIntro": "The hub is the server assignments come from and submissions go to. Your teacher gives you the address – teachers also enter their teacher key.",
+    "url": "Hub address",
+    "personalCode": "Personal code (students)",
+    "personalHint": "The 6-character code from your teacher. BluePy remembers it on this device.",
+    "personalMissing": "Please enter your personal code.",
+    "teacherKey": "Teacher key",
+    "teacherKeyHint": "Stored encrypted in the system keychain. Create one on the hub: `python -m bluepy_hub teacher add \"Name\"`.",
+    "stored": "stored",
+    "verifiedAs": "signed in as {{name}}",
+    "remove": "remove",
+    "save": "Save",
+    "noUrl": "No hub address set.",
+    "openSettings": "Open settings",
+    "fetchTitle": "Get assignment",
+    "taskCode": "Assignment code",
+    "taskCodeOptional": "Assignment code (optional)",
+    "codeAuto": "assigned by the hub",
+    "fetchHint": "Your teacher handed out the code. The assignment goes to Documents/BluePy/Aufgaben and opens right away.",
+    "fetch": "Get",
+    "fetching": "Fetching…",
+    "fetched": "Assignment opened: {{title}}",
+    "submitTitle": "Submit",
+    "notAssignment": "The open project is not a hub assignment. Get an assignment first (Assignments ▸ Get assignment…).",
+    "submitFrom": "Submit from",
+    "submitUntil": "Submit until",
+    "windowAfter": "deadline passed",
+    "windowBefore": "submissions open at {{when}}",
+    "lastSubmitted": "Last submitted: {{when}}",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "publishTitle": "New assignment for students",
+    "title": "Title",
+    "description": "Description (Markdown)",
+    "descriptionHint": "# Task\n\nDescribe what to do. Headings with #, lists with -, code with ```.",
+    "classes": "Classes",
+    "noClasses": "No classes yet – Assignments ▸ Manage classes… first",
+    "excludeFiles": "Files in the package",
+    "withTests": "Include unit tests",
+    "publish": "Publish",
+    "publishing": "Uploading…",
+    "publishedTitle": "Assignment published",
+    "publishedIntro": "Give this code to your students:",
+    "copy": "Copy",
+    "collectTitle": "Collect submissions",
+    "noTasks": "No assignments published yet.",
+    "submissions": "Submissions",
+    "collect": "Collect",
+    "collecting": "Loading…",
+    "collected": "{{count}} of {{total}} submissions loaded – review mode is on.",
+    "window": {
+      "before": "not open yet",
+      "open": "open",
+      "after": "closed"
+    },
+    "classesTitle": "Manage classes",
+    "newClass": "New class",
+    "className": "Class name",
+    "names": "Names (one per line)",
+    "namesHint": "Anna Miller\nBen Smith\n…",
+    "addNames": "Add names",
+    "createClass": "Create class",
+    "copyList": "Copy list",
+    "removeClass": "Delete class",
+    "removeClassConfirm": "Delete the class with all codes and submissions?",
+    "listCopied": "Names and codes of class {{name}} copied",
+    "codesHint": "Everyone gets their code once (slip of paper, LMS). BluePy remembers it on first submit.",
+    "reviewTitle": "Review: {{title}}",
+    "reviewProgress": "{{seen}} graded · {{submitted}} of {{total}} submitted",
+    "reviewClose": "End review",
+    "reviewPick": "Pick a submission…",
+    "reviewPrev": "Previous submission",
+    "reviewNext": "Next submission",
+    "missing": "not submitted",
+    "points": "Points",
+    "notes": "Notes on this submission…",
+    "sharedDevice": "same device",
+    "sharedDeviceHint": "This device also submitted under another code.",
+    "late": "late",
+    "noDescription": "No description.",
+    "testsAll": "Tests for all submissions",
+    "testsAllHint": "Runs the assignment's unit tests for every submission in its own Python process (the teacher's test files win).",
+    "testsTable": "Result table",
+    "testsTableTitle": "Test results: {{title}}",
+    "student": "Name",
+    "copyCsv": "Copy as CSV",
+    "csvCopied": "Table copied to the clipboard as CSV",
+    "feedbackTitle": "Feedback",
+    "noFeedback": "No feedback from your teacher yet.",
+    "noNotes": "(no notes)",
+    "feedbackUpdated": "As of {{when}}"
   }
 }

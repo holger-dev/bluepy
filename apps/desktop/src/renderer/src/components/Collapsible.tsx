@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useState, type JSX, type ReactNode } from 'react'
 
-export type PaneId = 'sidebar' | 'codepad' | 'terminal' | 'bench'
+export type PaneId = 'sidebar' | 'codepad' | 'terminal' | 'bench' | 'assignment'
 
-const STORAGE_KEY = 'bluepy.panes'
+/** Per window role: both windows share one origin (and localStorage), but their panes are independent. */
+const storageKey = (): string => `bluepy.panes.${document.body.dataset.window ?? 'main'}`
 
 function readCollapsed(): Partial<Record<PaneId, boolean>> {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
+    const raw = window.localStorage.getItem(storageKey())
     return raw ? (JSON.parse(raw) as Partial<Record<PaneId, boolean>>) : {}
   } catch {
     return {}
@@ -15,7 +16,7 @@ function readCollapsed(): Partial<Record<PaneId, boolean>> {
 
 function writeCollapsed(value: Partial<Record<PaneId, boolean>>): void {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
+    window.localStorage.setItem(storageKey(), JSON.stringify(value))
   } catch {
     /* storage unavailable – collapse state is a per-window convenience only */
   }

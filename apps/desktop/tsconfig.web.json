@@ -10,6 +10,6 @@
       "@/*": ["./src/renderer/src/*"]
     }
   },
-  "include": ["src/renderer/src/**/*.ts", "src/renderer/src/**/*.tsx", "../../packages/protocol/src/**/*.ts"],
-  "exclude": ["../../packages/protocol/src/**/*.test.ts"]
+  "include": ["src/shared/**/*.ts", "src/renderer/src/**/*.ts", "src/renderer/src/**/*.tsx", "../../packages/protocol/src/**/*.ts"],
+  "exclude": ["src/shared/**/*.test.ts", "../../packages/protocol/src/**/*.test.ts"]
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeScopes, type Scope } from './scopeHighlight'
+import { computeScopes, type Scope } from './pythonScopes'
 
 function brief(scopes: Scope[]): Array<[string, number, number, number, number]> {
   return scopes.map((s) => [s.kind, s.start, s.end, s.indent, s.depth])

@@ -1,29 +1,22 @@
-import { useCallback, useEffect, useState, type JSX } from 'react'
+import { useEffect, useState, type JSX } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { BenchObject, InvocationResult, LiveMethodInfo } from '@bluepy/protocol'
+import type { ClassInfo } from '@bluepy/protocol'
 import { ClassDiagram, type DiagramNode } from '../components/ClassDiagram'
 import { CollapsiblePane, usePaneState } from '../components/Collapsible'
-import { ContextMenu, type MenuEntry } from '../components/ContextMenu'
+import type { MenuEntry } from '../components/ContextMenu'
 import { ObjectBench } from '../components/ObjectBench'
-import { CreateObjectDialog, InspectorDialog, MethodCallDialog, ResultDialog, type DialogState } from '../components/ObjectDialogs'
+import { signature, useObjectInteraction } from '../components/ObjectInteraction'
 import { PythonSetupDialog } from '../components/PythonSetupDialog'
+import { RecordingBar } from '../components/RecordingBar'
 import { StatusBar } from '../components/StatusBar'
+import { RecordTestDialog } from '../components/TestDialogs'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { useStore } from '../store'
-
-interface MenuState {
-  x: number
-  y: number
-  entries: MenuEntry[]
-}
-
-function signature(params: { name: string; annotation: string | null; default: string | null }[]): string {
-  return params.map((p) => (p.default !== null ? `${p.name}=${p.default}` : p.name)).join(', ')
-}
 
 /**
  * BlueJ's "project window": the class diagram with the object bench below.
- * Right-click a class to create objects or call static methods, right-click
- * an object to call its methods, inspect or remove it.
+ * Right-click a class to create objects, call static methods or work with
+ * its tests; right-click an object to call its methods, inspect or remove it.
  */
 export function DiagramWindow(): JSX.Element {
   const { t } = useTranslation()
@@ -33,35 +26,77 @@ export function DiagramWindow(): JSX.Element {
   const project = useStore((s) => s.project)
   const status = useStore((s) => s.backendStatus)
   const busy = useStore((s) => s.busy)
+  const recording = useStore((s) => s.recording)
   const compile = useStore((s) => s.compile)
   const runModule = useStore((s) => s.runModule)
   const describeClass = useStore((s) => s.describeClass)
-  const removeObject = useStore((s) => s.removeObject)
-  const setMessage = useStore((s) => s.setMessage)
-  const [menu, setMenu] = useState<MenuState | null>(null)
-  const [dialog, setDialog] = useState<DialogState>(null)
+  const runTests = useStore((s) => s.runTests)
+  const runAllTests = useStore((s) => s.runAllTests)
+  const createTestClass = useStore((s) => s.createTestClass)
+  const benchToFixture = useStore((s) => s.benchToFixture)
+  const fixtureToBench = useStore((s) => s.fixtureToBench)
+  const objects = useObjectInteraction()
+  const [recordDialog, setRecordDialog] = useState<{ file: string; className: string; existing: string[] } | null>(null)
   const { collapsed, toggle } = usePaneState()
   const running = status === 'running'
+  const hasTests = (project?.model?.classes ?? []).some((c) => c.stereotype === 'unittest')
 
   useEffect(() => {
     void bootstrap('diagram')
   }, [bootstrap])
 
-  const closeMenu = useCallback(() => setMenu(null), [])
-
-  const showResult = (label: string, result: InvocationResult): void => {
-    if (result.value) setDialog({ kind: 'result', label, result })
-    else setMessage(`${label} ✓`)
-  }
-
   // --------------------------------------------------------- class menu
 
-  const onClassMenu = async (node: DiagramNode, x: number, y: number): Promise<void> => {
+  const testEntries = (cls: ClassInfo, compiled: boolean): MenuEntry[] => {
+    const entries: MenuEntry[] = []
+    const hint = !running ? t('menu.needsBackend') : !compiled ? t('menu.needsCompile') : undefined
+    const testMethods = cls.methods.filter((m) => m.name.startsWith('test'))
+    const hasFixture = cls.methods.some((m) => m.name === 'setUp')
+    const busyOrRecording = busy !== null || recording !== null
+    entries.push({
+      label: t('tests.testAll'),
+      detail: hint,
+      disabled: busyOrRecording,
+      onSelect: () => void runTests({ files: [cls.file], className: cls.name, label: cls.name })
+    })
+    for (const m of testMethods) {
+      entries.push({
+        label: `${m.name}()`,
+        disabled: busyOrRecording,
+        onSelect: () => void runTests({ files: [cls.file], className: cls.name, method: m.name, label: `${cls.name}.${m.name}` })
+      })
+    }
+    entries.push({ separator: true, label: '' })
+    entries.push({
+      label: t('tests.createMethod'),
+      detail: hint,
+      disabled: !running || !compiled || busyOrRecording,
+      onSelect: () => setRecordDialog({ file: cls.file, className: cls.name, existing: cls.methods.map((m) => m.name) })
+    })
+    entries.push({
+      label: t('tests.benchToFixture'),
+      detail: hint,
+      disabled: !running || busyOrRecording,
+      onSelect: () => void benchToFixture(cls.file, cls.name)
+    })
+    entries.push({
+      label: t('tests.fixtureToBench'),
+      detail: hint ?? (!hasFixture ? t('tests.noFixture') : undefined),
+      disabled: !running || !compiled || busyOrRecording || !hasFixture,
+      onSelect: () => void fixtureToBench(cls.file, cls.name)
+    })
+    entries.push({ separator: true, label: '' })
+    return entries
+  }
+
+  const onClassMenu = (node: DiagramNode, x: number, y: number): void => {
     const entries: MenuEntry[] = []
     const compiled = project?.compile[node.file]?.ok === true
     const hint = !running ? t('menu.needsBackend') : !compiled ? t('menu.needsCompile') : undefined
 
-    if (node.kind === 'class' && node.cls) {
+    if (node.kind === 'class' && node.cls?.stereotype === 'unittest') {
+      entries.push(...testEntries(node.cls, compiled))
+    } else if (node.kind === 'class' && node.cls) {
       const cls = node.cls
       const ctor = cls.methods.find((m) => m.name === '__init__')
       const ctorParams = ctor ? ctor.params : []
@@ -69,11 +104,7 @@ export function DiagramWindow(): JSX.Element {
         label: `new ${cls.name}(${signature(ctorParams)})`,
         detail: hint,
         disabled: !running || !compiled || cls.stereotype === 'abstract' || cls.stereotype === 'interface',
-        onSelect: () => {
-          void describeClass(cls.module, cls.name)
-            .then((live) => setDialog({ kind: 'create', module: cls.module, name: cls.name, live }))
-            .catch((e) => setMessage(e instanceof Error ? e.message : String(e)))
-        }
+        onSelect: () => objects.openCreate(cls.module, cls.name)
       })
       const statics = cls.methods.filter((m) => (m.kind === 'static' || m.kind === 'classmethod') && m.visibility === 'public')
       if (statics.length) entries.push({ label: t('menu.staticMethods'), heading: true })
@@ -81,7 +112,7 @@ export function DiagramWindow(): JSX.Element {
         entries.push({
           label: `${cls.name}.${m.name}(${signature(m.params)})`,
           disabled: !running || !compiled,
-          onSelect: () => setDialog({ kind: 'call', target: { module: cls.module, name: cls.name }, method: m })
+          onSelect: () => objects.openCall({ module: cls.module, name: cls.name }, m)
         })
       }
       entries.push({ separator: true, label: '' })
@@ -97,7 +128,7 @@ export function DiagramWindow(): JSX.Element {
         onSelect: () => void runModule(node.file)
       })
     }
-    if (node.kind === 'class' && node.cls) {
+    if (node.kind === 'class' && node.cls && node.cls.stereotype !== 'unittest') {
       const cls = node.cls
       entries.push({
         label: t('menu.inspectClass'),
@@ -109,41 +140,12 @@ export function DiagramWindow(): JSX.Element {
           })
         }
       })
-    }
-    setMenu({ x, y, entries })
-  }
-
-  // -------------------------------------------------------- object menu
-
-  const onObjectMenu = async (obj: BenchObject, x: number, y: number): Promise<void> => {
-    const entries: MenuEntry[] = []
-    try {
-      const live = await describeClass(obj.module, obj.type)
-      const callable = live.methods.filter((m) => (m.kind === 'instance' || m.kind === 'classmethod') && m.visibility === 'public')
-      const own = callable.filter((m) => !m.inherited)
-      const inherited = callable.filter((m) => m.inherited)
-      const add = (m: LiveMethodInfo): void => {
-        entries.push({
-          label: `${m.name}(${signature(m.params)})`,
-          detail: m.returns ? `→ ${m.returns}` : undefined,
-          onSelect: () => setDialog({ kind: 'call', target: { bench: obj.name, type: obj.type }, method: m })
-        })
+      const hasTestClass = (project?.model?.classes ?? []).some((c) => c.stereotype === 'unittest' && c.name === `${cls.name}Test`)
+      if (!hasTestClass && cls.stereotype !== 'exception') {
+        entries.push({ label: t('tests.createClass'), disabled: busy !== null, onSelect: () => void createTestClass(cls.id) })
       }
-      own.forEach(add)
-      const byClass = new Map<string, LiveMethodInfo[]>()
-      for (const m of inherited) byClass.set(m.definedIn, [...(byClass.get(m.definedIn) ?? []), m])
-      for (const [definedIn, methods] of byClass) {
-        entries.push({ label: t('menu.inheritedFrom', { name: definedIn }), heading: true })
-        methods.forEach(add)
-      }
-      if (callable.length === 0) entries.push({ label: t('menu.noMethods'), disabled: true })
-    } catch (e) {
-      entries.push({ label: e instanceof Error ? e.message : String(e), disabled: true })
     }
-    entries.push({ separator: true, label: '' })
-    entries.push({ label: t('dialog.inspect'), onSelect: () => setDialog({ kind: 'inspect', name: obj.name, title: obj.name, path: [] }) })
-    entries.push({ label: t('menu.remove'), onSelect: () => void removeObject(obj.name) })
-    setMenu({ x, y, entries })
+    objects.showMenu(x, y, entries)
   }
 
   return (
@@ -153,6 +155,11 @@ export function DiagramWindow(): JSX.Element {
           <button type="button" className="primary" onClick={() => void compile()} disabled={!project || busy !== null} title="⌘K">
             {busy === 'compile' ? t('toolbar.compiling') : t('toolbar.compile')}
           </button>
+          {hasTests && (
+            <button type="button" onClick={() => void runAllTests()} disabled={busy !== null || recording !== null} title="⌘⇧R / Ctrl+Shift+R">
+              {busy === 'tests' ? t('toolbar.testsRunning') : t('toolbar.runTests')}
+            </button>
+          )}
         </div>
         <div className="toolbar-spacer" />
         <span className="toolbar-title">{project ? project.name : t('app.title')}</span>
@@ -160,33 +167,28 @@ export function DiagramWindow(): JSX.Element {
         <button type="button" onClick={() => void openWindow('main')} title="⌘⇧E / Ctrl+Shift+E">
           {t('toolbar.editorWindow')}
         </button>
+        {hasTests && (
+          <button type="button" onClick={() => void openWindow('tests')} title="⌘⇧T / Ctrl+Shift+T">
+            {t('toolbar.testsWindow')}
+          </button>
+        )}
+        <ThemeToggle />
       </header>
+      <RecordingBar />
       <main className={`workspace workspace-diagram ${collapsed.bench ? 'bench-collapsed' : ''}`}>
         <section className="pane pane-diagram">
-          <ClassDiagram onClassMenu={(node, x, y) => void onClassMenu(node, x, y)} />
+          <ClassDiagram onClassMenu={onClassMenu} />
         </section>
         <section className="pane pane-bench">
           <CollapsiblePane id="bench" title={t('bench.title')} collapsed={Boolean(collapsed.bench)} onToggle={() => toggle('bench')} orientation="horizontal">
-            <ObjectBench
-              onObjectMenu={(obj, x, y) => void onObjectMenu(obj, x, y)}
-              onInspect={(obj) => setDialog({ kind: 'inspect', name: obj.name, title: obj.name, path: [] })}
-            />
+            <ObjectBench onObjectMenu={objects.onObjectMenu} onInspect={(obj) => objects.inspect(obj.name, obj.name)} />
           </CollapsiblePane>
         </section>
       </main>
       <StatusBar />
-      {menu && <ContextMenu x={menu.x} y={menu.y} entries={menu.entries} onClose={closeMenu} />}
-      {dialog?.kind === 'create' && <CreateObjectDialog state={dialog} onClose={() => setDialog(null)} onResult={showResult} />}
-      {dialog?.kind === 'call' && <MethodCallDialog state={dialog} onClose={() => setDialog(null)} onResult={showResult} />}
-      {dialog?.kind === 'result' && (
-        <ResultDialog
-          state={dialog}
-          onClose={() => setDialog(null)}
-          onInspect={() => setDialog({ kind: 'inspect', name: '_', title: t('dialog.resultTitle'), path: [] })}
-        />
-      )}
-      {dialog?.kind === 'inspect' && (
-        <InspectorDialog state={dialog} onClose={() => setDialog(null)} onNavigate={(path) => setDialog({ ...dialog, path })} />
+      {objects.overlay}
+      {recordDialog && (
+        <RecordTestDialog file={recordDialog.file} className={recordDialog.className} existing={recordDialog.existing} onClose={() => setRecordDialog(null)} />
       )}
       {setupOpen && <PythonSetupDialog />}
     </div>

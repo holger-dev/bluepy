@@ -134,6 +134,15 @@ def is_inspectable(value: Any) -> bool:
     return not isinstance(value, PRIMITIVES)
 
 
+def is_bench_worthy(value: Any) -> bool:
+    """Objects that make sense on the object bench: instances and containers, not classes/modules/functions."""
+    if value is None or not is_inspectable(value):
+        return False
+    if isinstance(value, (type, ModuleType)) or inspect.isroutine(value) or inspect.isclass(value):
+        return False
+    return True
+
+
 def fields_of(value: Any) -> list[dict[str, Any]]:
     """Fields shown in the inspector for one value."""
     fields: list[dict[str, Any]] = []
@@ -190,26 +199,68 @@ class Bench:
     def __init__(self, namespace: dict[str, Any]) -> None:
         self.namespace = namespace
         self.objects: dict[str, Any] = {}
+        # Python expression that produced each object (for "Object Bench to Test Fixture"); None if unknown.
+        self.code: dict[str, str | None] = {}
 
     def entry(self, name: str) -> dict[str, Any]:
         obj = self.objects[name]
         cls = type(obj)
-        return {"name": name, "type": cls.__name__, "module": cls.__module__, "repr": describe_value(obj)["repr"]}
+        return {
+            "name": name,
+            "type": cls.__name__,
+            "module": cls.__module__,
+            "repr": describe_value(obj)["repr"],
+            "code": self.code.get(name),
+        }
 
     def list(self) -> list[dict[str, Any]]:
         return [self.entry(n) for n in self.objects]
 
-    def add(self, name: str, obj: Any) -> dict[str, Any]:
+    def add(self, name: str, obj: Any, code: str | None = None) -> dict[str, Any]:
         if not name.isidentifier() or keyword.iskeyword(name):
             raise JsonRpcError(INVALID_PARAMS, f"'{name}' ist kein gültiger Name")
         self.objects[name] = obj
+        self.code[name] = code
         self.namespace[name] = obj
         return self.entry(name)
 
     def remove(self, name: str) -> None:
         self.objects.pop(name, None)
+        self.code.pop(name, None)
         if self.namespace.get(name) is not None:
             self.namespace.pop(name, None)
+
+    def forget(self, name: str) -> None:
+        """Drop the bench entry but keep the Code Pad variable."""
+        self.objects.pop(name, None)
+        self.code.pop(name, None)
+
+    def clear(self) -> None:
+        for name in list(self.objects):
+            self.remove(name)
+
+    def sync_names(self, names: list[str], code_for: dict[str, str | None]) -> bool:
+        """After a Code Pad statement: variables bound to objects join the bench
+        (BlueJ shows Code Pad objects as draggable icons; BluePy puts them on the
+        bench right away), variables rebound to primitives or deleted leave it.
+        Returns True when the bench changed."""
+        changed = False
+        for name in names:
+            if name not in self.namespace:
+                if name in self.objects:
+                    self.forget(name)
+                    changed = True
+                continue
+            value = self.namespace[name]
+            if is_bench_worthy(value):
+                if self.objects.get(name) is not value or self.code.get(name) != code_for.get(name):
+                    self.objects[name] = value
+                    self.code[name] = code_for.get(name)
+                    changed = True
+            elif name in self.objects:
+                self.forget(name)
+                changed = True
+        return changed
 
     def get(self, name: str) -> Any:
         if name not in self.objects:
@@ -314,3 +365,26 @@ def call_expression(target: str, method: str | None, args: list[str]) -> str:
     """Python source of an interactive call, for 'Record method calls'."""
     joined = ", ".join(a.strip() for a in args)
     return f"{target}.{method}({joined})" if method else f"{target}({joined})"
+
+
+def path_expression(root_name: str, root: Any, path: list[Any]) -> str:
+    """`konto1.inhaber`, `bank1.konten[0]` – an inspector path as Python source (steps as `navigate` takes them)."""
+    out = root_name
+    value = root
+    for step in path:
+        if isinstance(value, dict):
+            out += f"[{step}]"  # step is repr(key)
+            matches = [k for k in value if repr(k) == step]
+            value = value[matches[0]] if matches else None
+        elif isinstance(value, (list, tuple)):
+            index = int(str(step).strip("[]"))
+            out += f"[{index}]"
+            value = value[index] if -len(value) <= index < len(value) else None
+        elif isinstance(value, (set, frozenset)):
+            index = int(str(step).strip("[]"))
+            out = f"list({out})[{index}]"
+            value = list(value)[index] if index < len(value) else None
+        else:
+            out += f".{step}"
+            value = getattr(value, str(step), None)
+    return out

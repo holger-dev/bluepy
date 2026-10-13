@@ -1,0 +1,10 @@
+{
+  "examples": [
+    { "id": "grundlagen", "name": "Python-Grundlagen", "description": "Funktionen, Strings, Listen und Dictionaries – mit Übungsaufgaben und Tests, die erst grün werden, wenn du sie löst.", "level": "Einstieg" },
+    { "id": "bank", "name": "Bank", "description": "Konto, Sparkonto, Person und Bank: Klassen mit Vererbung und Assoziationen, Objekte auf der Leiste erzeugen und Methoden aufrufen.", "level": "OOP" },
+    { "id": "tierpark", "name": "Tierpark", "description": "Abstrakte Oberklasse Tier, Löwe und Pinguin, Gehege und Pfleger: Vererbung, Polymorphie, Komposition und Assoziation.", "level": "OOP" },
+    { "id": "quest", "name": "Quest-Spiel", "description": "Gamification: Quests lösen, XP sammeln, Level aufsteigen, Abzeichen bekommen – mit Enum, Dataclass und einem spielbaren Hauptprogramm.", "level": "OOP" },
+    { "id": "datenstrukturen", "name": "Datenstrukturen", "description": "Stapel, Schlange, verkettete Liste und binärer Suchbaum aus Knoten gebaut – zum Durchklicken im Inspektor.", "level": "Abitur" },
+    { "id": "geheimschrift", "name": "Geheimschrift", "description": "Caesar und Vigenère mit gemeinsamem Interface, Nachrichten ver- und entschlüsseln, Caesar per Häufigkeitsanalyse knacken.", "level": "Projekt" }
+  ]
+}

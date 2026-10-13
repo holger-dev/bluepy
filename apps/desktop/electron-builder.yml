@@ -21,7 +21,9 @@ extraResources:
     filter:
       - "**/*"
       - "!**/__pycache__/**"
-asarUnpack: []
+# Pyright's language server runs as a child process (ELECTRON_RUN_AS_NODE) and must be a real file, not inside the asar.
+asarUnpack:
+  - node_modules/pyright/**
 npmRebuild: false
 
 mac:
@@ -34,7 +36,7 @@ mac:
   entitlements: build/entitlements.mac.plist
   entitlementsInherit: build/entitlements.mac.plist
   # Notarization: set APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID
-  # in the environment; electron-builder picks them up automatically.
+  # in the environment (the Release workflow does); electron-builder picks them up.
   notarize: true
 dmg:
   artifactName: ${productName}-${version}-mac.${ext}
@@ -42,17 +44,14 @@ dmg:
 win:
   target:
     - target: nsis
-    - target: msi
     - target: portable
-  # Code signing: configure later via CSC_LINK / CSC_KEY_PASSWORD (see ADR 002, #17).
+  # Code signing: WIN_CSC_LINK / WIN_CSC_KEY_PASSWORD in the Release workflow; unsigned until the certificate exists.
+  signAndEditExecutable: true
 nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
   artifactName: ${productName}-${version}-setup.${ext}
-msi:
-  perMachine: true
-  artifactName: ${productName}-${version}.${ext}
 portable:
   artifactName: ${productName}-${version}-portable.${ext}
 
@@ -65,5 +64,6 @@ linux:
 
 publish:
   provider: github
-  owner: holgerheidkamp
+  owner: holger-dev
   repo: bluepy
+  releaseType: release

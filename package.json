@@ -1,8 +1,8 @@
 {
   "name": "bluepy",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
-  "description": "BluePy – a BlueJ-style teaching IDE for Python",
+  "description": "BluePy – a teaching IDE for Python with class diagram, object bench and interactive method calls",
   "license": "GPL-3.0-only",
   "packageManager": "pnpm@10.28.0",
   "engines": {
@@ -14,6 +14,7 @@
     "dist": "pnpm --filter @bluepy/desktop dist",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
-    "test:backend": "python3 -m unittest discover -s backend/tests -t backend -v"
+    "test:backend": "python3 -m unittest discover -s backend/tests -t backend -v",
+    "test:hub": "python3 -m unittest discover -s hub/tests -t hub -v"
   }
 }

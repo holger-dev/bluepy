@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import builtins
 import ctypes
 import os
@@ -24,8 +25,11 @@ from .objects import (
     describe_class,
     eval_args,
     fields_of,
+    is_bench_worthy,
     is_inspectable,
+    module_name_for,
     navigate,
+    path_expression,
 )
 from .rpc import (
     HALTED,
@@ -37,6 +41,7 @@ from .rpc import (
     JsonRpcError,
 )
 from .streams import OutputProxy, StdinProxy
+from .testing import build_suite, describe_test_class, fixture_from_class, run_suite
 
 
 _SHUTDOWN = object()
@@ -51,6 +56,8 @@ IMMEDIATE_METHODS = frozenset(
         "stdin.provide",
         "bench.list",
         "bench.suggestName",
+        "bench.clear",
+        "tests.describe",
         "debug.setBreakpoints",
         "debug.clearBreakpoints",
         "debug.arm",
@@ -68,6 +75,63 @@ IMMEDIATE_METHODS = frozenset(
 )
 
 Handler = Callable[[dict[str, Any]], Any]
+
+
+def _target_names(node: ast.AST) -> list[str]:
+    if isinstance(node, ast.Name):
+        return [node.id]
+    if isinstance(node, (ast.Tuple, ast.List)):
+        return [n for elt in node.elts for n in _target_names(elt)]
+    if isinstance(node, ast.Starred):
+        return _target_names(node.value)
+    return []
+
+
+def assigned_names(code: str) -> tuple[list[str], dict[str, str | None]]:
+    """Variables a Code Pad statement (re)binds or deletes at top level, with the
+    source of the value expression where there is a simple one."""
+    try:
+        tree = ast.parse(code.rstrip("\n"), "<codepad>", "exec")
+    except SyntaxError:
+        return [], {}
+    names: list[str] = []
+    code_for: dict[str, str | None] = {}
+
+    def add(name: str, source: str | None) -> None:
+        if name not in names:
+            names.append(name)
+        code_for[name] = source
+
+    for stmt in tree.body:
+        if isinstance(stmt, ast.Assign):
+            value_src = ast.unparse(stmt.value)
+            for target in stmt.targets:
+                if isinstance(target, ast.Name):
+                    add(target.id, value_src)
+                elif isinstance(target, (ast.Tuple, ast.List)) and isinstance(stmt.value, (ast.Tuple, ast.List)) and len(target.elts) == len(stmt.value.elts):
+                    for elt, val in zip(target.elts, stmt.value.elts):
+                        for n in _target_names(elt):
+                            add(n, ast.unparse(val) if isinstance(elt, ast.Name) else None)
+                else:
+                    for n in _target_names(target):
+                        add(n, None)
+        elif isinstance(stmt, ast.AnnAssign) and stmt.value is not None:
+            for n in _target_names(stmt.target):
+                add(n, ast.unparse(stmt.value))
+        elif isinstance(stmt, ast.AugAssign):
+            for n in _target_names(stmt.target):
+                add(n, None)
+        elif isinstance(stmt, ast.Delete):
+            for target in stmt.targets:
+                for n in _target_names(target):
+                    add(n, None)
+        elif isinstance(stmt, (ast.For, ast.With, ast.AsyncFor, ast.AsyncWith)):
+            # loop variables / context targets end up in the namespace too
+            targets = [stmt.target] if isinstance(stmt, (ast.For, ast.AsyncFor)) else [i.optional_vars for i in stmt.items if i.optional_vars]
+            for target in targets:
+                for n in _target_names(target):
+                    add(n, None)
+    return names, code_for
 
 
 class Session:
@@ -96,6 +160,10 @@ class Session:
         self.bench = Bench(self.namespace)
         self.loader = ModuleLoader(cwd or os.getcwd(), self.namespace)
         self.debugger = Debugger(self)
+        # Source of the expression that produced `_` (last Code Pad / call result), for bench code tracking.
+        self._last_result_code: str | None = None
+        # Object results of Code Pad entries, by entry id ("$<id>" in object.inspect/get), newest last.
+        self._codepad_values: dict[int, tuple[Any, str]] = {}
         self.handlers: dict[str, Handler] = {
             "ping": self._h_ping,
             "env.info": self._h_env_info,
@@ -114,6 +182,10 @@ class Session:
             "object.remove": self._h_object_remove,
             "bench.list": self._h_bench_list,
             "bench.suggestName": self._h_bench_suggest_name,
+            "bench.clear": self._h_bench_clear,
+            "tests.describe": self._h_tests_describe,
+            "tests.run": self._h_tests_run,
+            "tests.fixtureToBench": self._h_tests_fixture_to_bench,
             "debug.setBreakpoints": self._h_debug_set_breakpoints,
             "debug.clearBreakpoints": lambda _p: (self.debugger.clear_breakpoints(), {"ok": True})[1],
             "debug.arm": self._h_debug_arm,
@@ -368,8 +440,23 @@ class Session:
         code = params.get("code")
         if not isinstance(code, str):
             raise JsonRpcError(INVALID_PARAMS, "codepad.eval: 'code' must be a string")
+        entry_id = params.get("id")
+        assigned, code_for = assigned_names(code)
         with self.debugger.tracing():
-            return evaluate(code, self.namespace)
+            result = evaluate(code, self.namespace)
+        if result.get("kind") == "expression" and result.get("value") is not None:
+            self._last_result_code = code.strip()
+            value = self.namespace.get("_")
+            if is_bench_worthy(value):
+                result["inspectable"] = True
+                if isinstance(entry_id, int):
+                    self._codepad_values[entry_id] = (value, code.strip())
+                    while len(self._codepad_values) > 200:
+                        del self._codepad_values[next(iter(self._codepad_values))]
+        if assigned and result.get("error") is None:
+            self.bench.sync_names(assigned, code_for)
+        result["bench"] = self.bench.list()
+        return result
 
     # ------------------------------------------------- project & modules
 
@@ -442,7 +529,7 @@ class Session:
         except BaseException as exc:  # noqa: BLE001
             sys.stderr.write("".join(traceback.format_exception(exc)))
             return {"ok": False, "error": format_exception(exc), "record": code, "bench": self.bench.list()}
-        entry = self.bench.add(bench_name, obj)
+        entry = self.bench.add(bench_name, obj, call_expression(cls.__name__, None, [str(a) for a in args]))
         return {"ok": True, "object": entry, "record": code, "bench": self.bench.list()}
 
     def _h_object_call(self, params: dict[str, Any]) -> dict[str, Any]:
@@ -470,6 +557,7 @@ class Session:
             sys.stderr.write("".join(traceback.format_exception(exc)))
             return {"ok": False, "error": format_exception(exc), "record": code, "bench": self.bench.list()}
         self.namespace["_"] = result
+        self._last_result_code = code
         value = None if result is None else describe_value(result)
         if value is not None:
             self.conn.notify("result", {"repr": value["repr"], "type": value["type"], "invocation": self.current_invocation})
@@ -489,6 +577,11 @@ class Session:
         name = params.get("name")
         if name == "_":
             root, label = self.namespace.get("_"), "_"
+        elif isinstance(name, str) and name.startswith("$"):
+            entry = self._codepad_values.get(int(name[1:])) if name[1:].isdigit() else None
+            if entry is None:
+                raise JsonRpcError(INVALID_PARAMS, "Dieses Code-Pad-Ergebnis ist nicht mehr verfügbar")
+            root, label = entry[0], name
         elif isinstance(name, str):
             root, label = self.bench.get(name), name
         else:
@@ -518,10 +611,19 @@ class Session:
         }
 
     def _h_object_get(self, params: dict[str, Any]) -> dict[str, Any]:
-        value, _label = self._resolve(params)
+        value, label = self._resolve(params)
         new_name = params.get("newName") or self.bench.suggest_name(type(value).__name__)
-        entry = self.bench.add(str(new_name), value)
-        return {"ok": True, "object": entry, "bench": self.bench.list()}
+        if label == "_":
+            root, root_code = self.namespace.get("_"), self._last_result_code
+        elif label.startswith("$"):
+            root, root_code = self._codepad_values[int(label[1:])]
+        else:
+            root, root_code = self.bench.get(label), label
+        code = path_expression(root_code, root, params.get("path") or []) if root_code else None
+        record = f"{new_name} = {code}" if code else f"# {new_name}: Objekt von der Objektleiste geholt"
+        self.record(record)
+        entry = self.bench.add(str(new_name), value, code)
+        return {"ok": True, "object": entry, "record": record, "bench": self.bench.list()}
 
     def _h_object_remove(self, params: dict[str, Any]) -> dict[str, Any]:
         name = params.get("name")
@@ -535,6 +637,94 @@ class Session:
 
     def _h_bench_suggest_name(self, params: dict[str, Any]) -> dict[str, Any]:
         return {"name": self.bench.suggest_name(str(params.get("className") or "obj"))}
+
+    def _h_bench_clear(self, _params: dict[str, Any]) -> dict[str, Any]:
+        self.bench.clear()
+        return {"ok": True, "bench": self.bench.list()}
+
+    # ---------------------------------------------------------- unit tests
+
+    def _test_file(self, params: dict[str, Any]) -> tuple[str, str]:
+        rel = params.get("file")
+        class_name = params.get("className")
+        if not isinstance(rel, str) or not isinstance(class_name, str):
+            raise JsonRpcError(INVALID_PARAMS, "'file' and 'className' required")
+        return rel, class_name
+
+    def _h_tests_describe(self, params: dict[str, Any]) -> dict[str, Any]:
+        rel, class_name = self._test_file(params)
+        try:
+            return describe_test_class(os.path.join(self.loader.project_dir, rel), class_name)
+        except (OSError, SyntaxError, LookupError) as exc:
+            raise JsonRpcError(INVALID_PARAMS, str(exc)) from exc
+
+    def _h_tests_run(self, params: dict[str, Any]) -> dict[str, Any]:
+        files = params.get("files")
+        if not isinstance(files, list) or not all(isinstance(f, str) for f in files):
+            raise JsonRpcError(INVALID_PARAMS, "tests.run: 'files' must be a list of relative paths")
+        class_name = params.get("className")
+        method = params.get("method")
+        self.record("# " + ("Tests: " + ", ".join(files) if not class_name else f"Test: {class_name}" + (f".{method}" if method else "")))
+        load_results = self.loader.load(files)
+        reloaded = {r["module"] for r in load_results if r["ok"]}
+        self.bench.remove_instances_of_modules(reloaded)
+        modules: list[tuple[str, Any]] = []
+        failed: list[dict[str, Any]] = []
+        file_of_module: dict[str, str] = {}
+        for r in load_results:
+            if r["ok"]:
+                modules.append((r["file"], self.loader.loaded[r["module"]]))
+                file_of_module[r["module"]] = r["file"]
+            else:
+                error = r["error"] or {}
+                failed.append(
+                    {
+                        "id": r["file"],
+                        "file": r["file"],
+                        "className": r["module"],
+                        "method": r["stage"],
+                        "status": "error",
+                        "message": f"{error.get('type', 'Fehler')}: {error.get('message', '')}",
+                        "traceback": error.get("traceback"),
+                        "line": error.get("line"),
+                        "durationMs": 0,
+                    }
+                )
+        for record in failed:
+            self.conn.notify("test.finished", record)
+        suite = build_suite(modules, class_name if isinstance(class_name, str) else None, method if isinstance(method, str) else None)
+        with self.debugger.tracing():
+            summary = run_suite(suite, self.conn.notify, file_of_module)
+        summary["results"] = failed + summary["results"]
+        summary["total"] += len(failed)
+        summary["errors"] += len(failed)
+        summary["bench"] = self.bench.list()
+        return summary
+
+    def _h_tests_fixture_to_bench(self, params: dict[str, Any]) -> dict[str, Any]:
+        rel, class_name = self._test_file(params)
+        # Always take the fixture from the file as it is on disk.
+        load = self.loader.load([rel])[0]
+        if not load["ok"]:
+            return {"ok": False, "error": load["error"], "bench": self.bench.list(), "names": []}
+        cls = self.loader.get_class(load["module"], class_name)
+        self.bench.clear()
+        self.record(f"# Fixture von {class_name} auf die Objektleiste")
+        with self.debugger.tracing():
+            try:
+                fixture = fixture_from_class(cls)
+            except HaltRequested:
+                raise
+            except BaseException as exc:  # noqa: BLE001
+                sys.stderr.write("".join(traceback.format_exception(exc)))
+                return {"ok": False, "error": format_exception(exc), "bench": self.bench.list(), "names": []}
+        names = []
+        for name, value, code in fixture:
+            if name in self.bench.objects:
+                continue
+            self.bench.add(name, value, code)
+            names.append(name)
+        return {"ok": True, "bench": self.bench.list(), "names": names}
 
     # --------------------------------------------------------- debugger
 

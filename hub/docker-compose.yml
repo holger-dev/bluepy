@@ -1,0 +1,33 @@
+# BluePy-Hub with automatic HTTPS (Caddy).  See README.md.
+services:
+  hub:
+    build:
+      context: ..
+      dockerfile: hub/Dockerfile
+    image: bluepy-hub:latest
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    environment:
+      HUB_QUIET: "0"
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - hub
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    environment:
+      HUB_DOMAIN: ${HUB_DOMAIN:-localhost}
+
+volumes:
+  caddy-data:
+  caddy-config:

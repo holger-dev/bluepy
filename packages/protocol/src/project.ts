@@ -114,6 +114,8 @@ export interface BenchObject {
   type: string
   module: string
   repr: string
+  /** Expression that produced the object (bench → test fixture); null when unknown. */
+  code?: string | null
 }
 
 export interface LiveMethodInfo {
