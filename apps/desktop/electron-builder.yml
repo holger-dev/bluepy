@@ -1,0 +1,69 @@
+appId: dev.heidkamp.bluepy
+productName: BluePy
+copyright: Copyright © 2026 Holger Heidkamp – GPL-3.0
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+extraResources:
+  # The Python backend is shipped as plain source; it runs in the learner's Python.
+  - from: ../../backend
+    to: backend
+    filter:
+      - "**/*.py"
+      - "!tests/**"
+      - "!**/__pycache__/**"
+  # Example projects (Project ▸ Beispiel öffnen) are copied to ~/Documents/BluePy on first use.
+  - from: ../../examples
+    to: examples
+    filter:
+      - "**/*"
+      - "!**/__pycache__/**"
+asarUnpack: []
+npmRebuild: false
+
+mac:
+  category: public.app-category.developer-tools
+  target:
+    - target: dmg
+      arch: [universal]
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  # Notarization: set APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD and APPLE_TEAM_ID
+  # in the environment; electron-builder picks them up automatically.
+  notarize: true
+dmg:
+  artifactName: ${productName}-${version}-mac.${ext}
+
+win:
+  target:
+    - target: nsis
+    - target: msi
+    - target: portable
+  # Code signing: configure later via CSC_LINK / CSC_KEY_PASSWORD (see ADR 002, #17).
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: ${productName}-${version}-setup.${ext}
+msi:
+  perMachine: true
+  artifactName: ${productName}-${version}.${ext}
+portable:
+  artifactName: ${productName}-${version}-portable.${ext}
+
+linux:
+  category: Development
+  target:
+    - deb
+    - AppImage
+  artifactName: ${productName}-${version}-linux-${arch}.${ext}
+
+publish:
+  provider: github
+  owner: holgerheidkamp
+  repo: bluepy

@@ -1,0 +1,25 @@
+{
+  "name": "@bluepy/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared contracts: JSON-RPC messages (Electron <-> backend) and the typed IPC API (preload <-> renderer)",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas": "./src/schemas.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}

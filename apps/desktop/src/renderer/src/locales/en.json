@@ -1,0 +1,183 @@
+{
+  "app": {
+    "title": "BluePy",
+    "milestone": "M3"
+  },
+  "toolbar": {
+    "newClass": "New Class…",
+    "compile": "Compile",
+    "halt": "Halt",
+    "resetPython": "Reset Python",
+    "resetPythonConfirm": "Restart the Python process? All objects on the object bench will be lost.",
+    "diagramWindow": "Class diagram",
+    "editorWindow": "Editor",
+    "usesArrow": "Uses arrow",
+    "inheritanceArrow": "Inheritance arrow",
+    "save": "Save",
+    "compiling": "Compiling…",
+    "debuggerWindow": "Debugger"
+  },
+  "diagram": {
+    "title": "Class diagram",
+    "placeholder": "The project's class diagram will appear here from M1 on.",
+    "legendInheritance": "Inheritance",
+    "legendUses": "Uses",
+    "legendAssociation": "Association 1 : n",
+    "noProject": "No project open.",
+    "modelError": "Analysis not possible: {{detail}}",
+    "analyzing": "Analysing project…"
+  },
+  "bench": {
+    "title": "Object bench",
+    "empty": "No objects yet. Right-click a class → new …",
+    "noBackend": "Python is not running – run Compile first.",
+    "count": "{{count}} object(s)"
+  },
+  "editor": {
+    "title": "Editor",
+    "empty": "No file open. Click a file on the left or double-click a class in the diagram."
+  },
+  "codepad": {
+    "title": "Code Pad",
+    "placeholder": "Type an expression or statement – Enter runs it, Shift+Enter adds a line",
+    "unavailable": "The Code Pad needs a running Python.",
+    "clear": "Clear"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "clear": "Clear",
+    "stdinPlaceholder": "The program is waiting for input – type and press Enter",
+    "stdinIdle": "Input (active only while the program calls input())",
+    "empty": "Output from print() shows up here."
+  },
+  "status": {
+    "python": "Python",
+    "pythonMissing": "No Python found",
+    "pythonSearching": "Looking for Python…",
+    "backend": {
+      "unavailable": "unavailable",
+      "stopped": "stopped",
+      "starting": "starting…",
+      "running": "running",
+      "crashed": "crashed"
+    },
+    "backendDetail": {
+      "python-too-old": "Python is too old"
+    },
+    "busy": {
+      "open": "Opening project…",
+      "compile": "Compiling…",
+      "run": "Running…"
+    }
+  },
+  "setup": {
+    "title": "Python interpreter",
+    "intro": "BluePy runs your code in a regular Python. Python {{minimum}} or newer must be installed.",
+    "found": "Interpreters found",
+    "none": "No Python was found.",
+    "automatic": "Automatic (recommended)",
+    "automaticHint": "BluePy picks the newest usable version.",
+    "use": "Use",
+    "inUse": "in use",
+    "rescan": "Scan again",
+    "close": "Close",
+    "problem": {
+      "too-old": "too old ({{detail}})",
+      "probe-failed": "cannot be executed",
+      "not-cpython": "not CPython ({{detail}})",
+      "timeout": "not responding"
+    },
+    "noTkinter": "without tkinter (turtle will not work)",
+    "install": {
+      "title": "Install Python",
+      "win32": "Download Python from python.org and tick “Add python.exe to PATH” in the installer. Then restart BluePy.",
+      "darwin": "Download the macOS installer from python.org (not the Python that comes with the Xcode tools). Then restart BluePy.",
+      "linux": "Install your distribution's python3 package (e.g. sudo apt install python3 python3-tk). Then restart BluePy.",
+      "link": "Open python.org/downloads"
+    }
+  },
+  "result": {
+    "statement": "executed",
+    "halted": "halted"
+  },
+  "sidebar": {
+    "newFile": "New class / file…",
+    "empty": "No Python files yet. Create a class with ＋."
+  },
+  "newFile": {
+    "title": "New class",
+    "name": "Name",
+    "kind": "Kind",
+    "kinds": {
+      "class": "Class",
+      "unittest": "Unit test",
+      "module": "Module (script)"
+    },
+    "willCreate": "File: {{file}}",
+    "hint": "A valid Python name, e.g. Account or SavingsAccount",
+    "exists": "This file already exists.",
+    "create": "Create"
+  },
+  "welcome": {
+    "title": "Welcome to BluePy",
+    "intro": "BlueJ for Python: draw classes, create objects, click methods.",
+    "new": "New project…",
+    "open": "Open project…",
+    "example": "Open example “bank”",
+    "recent": "Recent projects"
+  },
+  "menu": {
+    "needsBackend": "Python not running",
+    "needsCompile": "compile first",
+    "staticMethods": "Static methods",
+    "openEditor": "Open editor",
+    "runModule": "Run module ({{file}})",
+    "inspectClass": "Show class attributes",
+    "inheritedFrom": "inherited from {{name}}",
+    "noMethods": "(no public methods)",
+    "remove": "Remove"
+  },
+  "dialog": {
+    "createTitle": "Create object: {{name}}",
+    "benchName": "Object name",
+    "create": "Create",
+    "call": "Call",
+    "noParams": "No parameters.",
+    "default": "default:",
+    "fromBench": "From the bench:",
+    "missing": "Parameter “{{name}}” is missing.",
+    "abstract": "Abstract classes cannot be instantiated.",
+    "resultTitle": "Result",
+    "noResult": "No return value (None).",
+    "toBench": "Put on bench",
+    "inspect": "Inspect",
+    "inspectTitle": "Inspector",
+    "inherits": "inherits from",
+    "noFields": "No attributes.",
+    "classAttributes": "Class attributes"
+  },
+  "debugger": {
+    "step": "Step",
+    "stepInto": "Step Into",
+    "stepOut": "Step Out",
+    "continue": "Continue",
+    "terminate": "Terminate",
+    "haltHint": "Pauses the running program at its next line",
+    "pausedAt": "Paused in {{file}}:{{line}} ({{reason}})",
+    "running": "Program running",
+    "idle": "Ready – set a breakpoint and call a method",
+    "reason": {
+      "breakpoint": "breakpoint",
+      "step": "step",
+      "pause": "halt"
+    },
+    "threads": "Threads",
+    "pausedShort": "paused",
+    "runningShort": "running",
+    "callSequence": "Call sequence",
+    "notPaused": "Not paused.",
+    "static": "Static variables",
+    "instance": "Instance variables",
+    "locals": "Local variables"
+  }
+}

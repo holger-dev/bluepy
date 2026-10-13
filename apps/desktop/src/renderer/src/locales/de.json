@@ -1,0 +1,183 @@
+{
+  "app": {
+    "title": "BluePy",
+    "milestone": "M3"
+  },
+  "toolbar": {
+    "newClass": "Neue Klasse…",
+    "compile": "Compile",
+    "halt": "Halt",
+    "resetPython": "Python zurücksetzen",
+    "resetPythonConfirm": "Python-Prozess neu starten? Alle Objekte auf der Objektleiste gehen verloren.",
+    "diagramWindow": "Klassendiagramm",
+    "editorWindow": "Editor",
+    "usesArrow": "Benutzt-Pfeil",
+    "inheritanceArrow": "Vererbungs-Pfeil",
+    "save": "Speichern",
+    "compiling": "Compile läuft…",
+    "debuggerWindow": "Debugger"
+  },
+  "diagram": {
+    "title": "Klassendiagramm",
+    "placeholder": "Hier erscheint ab M1 das Klassendiagramm des Projekts.",
+    "legendInheritance": "Vererbung",
+    "legendUses": "Benutzt",
+    "legendAssociation": "Assoziation 1 : n",
+    "noProject": "Kein Projekt geöffnet.",
+    "modelError": "Analyse nicht möglich: {{detail}}",
+    "analyzing": "Projekt wird analysiert…"
+  },
+  "bench": {
+    "title": "Objektleiste",
+    "empty": "Noch keine Objekte. Rechtsklick auf eine Klasse → new …",
+    "noBackend": "Python läuft nicht – erst Compile ausführen.",
+    "count": "{{count}} Objekt(e)"
+  },
+  "editor": {
+    "title": "Editor",
+    "empty": "Keine Datei geöffnet. Links eine Datei anklicken oder im Klassendiagramm doppelklicken."
+  },
+  "codepad": {
+    "title": "Code Pad",
+    "placeholder": "Ausdruck oder Anweisung eingeben – Enter führt aus, Shift+Enter neue Zeile",
+    "unavailable": "Code Pad ist erst verfügbar, wenn Python läuft.",
+    "clear": "Leeren"
+  },
+  "terminal": {
+    "title": "Terminal",
+    "clear": "Leeren",
+    "stdinPlaceholder": "Programm wartet auf Eingabe – Text eingeben und Enter drücken",
+    "stdinIdle": "Eingabe (nur aktiv, wenn das Programm input() aufruft)",
+    "empty": "Ausgaben von print() erscheinen hier."
+  },
+  "status": {
+    "python": "Python",
+    "pythonMissing": "Kein Python gefunden",
+    "pythonSearching": "Suche Python…",
+    "backend": {
+      "unavailable": "nicht verfügbar",
+      "stopped": "gestoppt",
+      "starting": "startet…",
+      "running": "läuft",
+      "crashed": "abgestürzt"
+    },
+    "backendDetail": {
+      "python-too-old": "Python ist zu alt"
+    },
+    "busy": {
+      "open": "Projekt wird geöffnet…",
+      "compile": "Compile…",
+      "run": "Programm läuft…"
+    }
+  },
+  "setup": {
+    "title": "Python-Interpreter",
+    "intro": "BluePy führt deinen Code in einem normalen Python aus. Es muss Python {{minimum}} oder neuer installiert sein.",
+    "found": "Gefundene Interpreter",
+    "none": "Es wurde kein Python gefunden.",
+    "automatic": "Automatisch (empfohlen)",
+    "automaticHint": "BluePy nimmt die neueste nutzbare Version.",
+    "use": "Verwenden",
+    "inUse": "in Benutzung",
+    "rescan": "Erneut suchen",
+    "close": "Schließen",
+    "problem": {
+      "too-old": "zu alt ({{detail}})",
+      "probe-failed": "nicht ausführbar",
+      "not-cpython": "kein CPython ({{detail}})",
+      "timeout": "antwortet nicht"
+    },
+    "noTkinter": "ohne tkinter (turtle funktioniert nicht)",
+    "install": {
+      "title": "Python installieren",
+      "win32": "Lade Python von python.org herunter und setze im Installer den Haken bei „Add python.exe to PATH“. Danach BluePy neu starten.",
+      "darwin": "Lade den macOS-Installer von python.org herunter (nicht das Python aus den Xcode-Werkzeugen). Danach BluePy neu starten.",
+      "linux": "Installiere das Paket python3 deiner Distribution (z. B. sudo apt install python3 python3-tk). Danach BluePy neu starten.",
+      "link": "python.org/downloads öffnen"
+    }
+  },
+  "result": {
+    "statement": "ausgeführt",
+    "halted": "angehalten"
+  },
+  "sidebar": {
+    "newFile": "Neue Klasse / Datei…",
+    "empty": "Noch keine Python-Dateien. Mit ＋ eine Klasse anlegen."
+  },
+  "newFile": {
+    "title": "Neue Klasse",
+    "name": "Name",
+    "kind": "Art",
+    "kinds": {
+      "class": "Klasse",
+      "unittest": "Unit-Test",
+      "module": "Modul (Skript)"
+    },
+    "willCreate": "Datei: {{file}}",
+    "hint": "Ein gültiger Python-Name, z. B. Konto oder SparKonto",
+    "exists": "Diese Datei gibt es schon.",
+    "create": "Anlegen"
+  },
+  "welcome": {
+    "title": "Willkommen bei BluePy",
+    "intro": "BlueJ für Python: Klassen zeichnen, Objekte erzeugen, Methoden anklicken.",
+    "new": "Neues Projekt…",
+    "open": "Projekt öffnen…",
+    "example": "Beispiel „bank“ öffnen",
+    "recent": "Zuletzt geöffnet"
+  },
+  "menu": {
+    "needsBackend": "Python läuft nicht",
+    "needsCompile": "erst Compile",
+    "staticMethods": "Statische Methoden",
+    "openEditor": "Editor öffnen",
+    "runModule": "Modul ausführen ({{file}})",
+    "inspectClass": "Klassenattribute anzeigen",
+    "inheritedFrom": "geerbt von {{name}}",
+    "noMethods": "(keine öffentlichen Methoden)",
+    "remove": "Entfernen"
+  },
+  "dialog": {
+    "createTitle": "Objekt erzeugen: {{name}}",
+    "benchName": "Name des Objekts",
+    "create": "Erzeugen",
+    "call": "Aufrufen",
+    "noParams": "Keine Parameter.",
+    "default": "Standard:",
+    "fromBench": "Von der Objektleiste:",
+    "missing": "Parameter „{{name}}“ fehlt.",
+    "abstract": "Abstrakte Klassen können nicht instanziiert werden.",
+    "resultTitle": "Ergebnis",
+    "noResult": "Kein Rückgabewert (None).",
+    "toBench": "Auf die Objektleiste",
+    "inspect": "Inspizieren",
+    "inspectTitle": "Inspektor",
+    "inherits": "erbt von",
+    "noFields": "Keine Attribute.",
+    "classAttributes": "Klassenattribute"
+  },
+  "debugger": {
+    "step": "Step",
+    "stepInto": "Step Into",
+    "stepOut": "Step Out",
+    "continue": "Continue",
+    "terminate": "Terminate",
+    "haltHint": "Hält das laufende Programm an der nächsten Zeile an",
+    "pausedAt": "Angehalten in {{file}}:{{line}} ({{reason}})",
+    "running": "Programm läuft",
+    "idle": "Bereit – Breakpoint setzen und Methode aufrufen",
+    "reason": {
+      "breakpoint": "Breakpoint",
+      "step": "Schritt",
+      "pause": "Halt"
+    },
+    "threads": "Threads",
+    "pausedShort": "angehalten",
+    "runningShort": "läuft",
+    "callSequence": "Aufrufsequenz",
+    "notPaused": "Nicht angehalten.",
+    "static": "Klassenvariablen",
+    "instance": "Instanzvariablen",
+    "locals": "Lokale Variablen"
+  }
+}
