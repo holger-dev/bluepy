@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./data:/data
+      - ../site:/site:ro   # Landing Page direkt aus dem Repo: `git pull` genügt, kein Rebuild
     environment:
       HUB_QUIET: "0"
     expose:

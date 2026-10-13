@@ -28,7 +28,7 @@ Reine Python-Standardbibliothek (3.11+), SQLite und Dateien unter `data/`, ein D
    ```
    Den Schlüssel in BluePy unter *Einstellungen ▸ Aufgaben-Hub* eintragen (Hub-URL: `https://bluepy.deine-schule.de`).
 
-Fertig. `https://bluepy.deine-schule.de/` zeigt die Landing Page aus `site/`, `/api/health` den Status.
+Fertig. `https://bluepy.deine-schule.de/` zeigt die Landing Page aus `site/` (als Volume eingebunden: nach Änderungen reicht `git pull`, Browser-Cache 5 Minuten), `/api/health` den Status.
 
 ### Betrieb
 

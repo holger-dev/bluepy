@@ -79,7 +79,7 @@
   a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
   a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   h1, h2, h3 { font-family: var(--font-display); line-height: 1.12; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
-  h1 { font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 700; }
+  h1 { font-size: clamp(2.2rem, 5.6vw, 4.2rem); font-weight: 700; text-wrap: initial; }
   h2 { font-size: clamp(1.6rem, 3.2vw, 2.2rem); font-weight: 600; }
   h3 { font-size: 1.1rem; font-weight: 600; }
   p { margin: 0; }
@@ -114,6 +114,8 @@
   /* hero */
   .hero { padding-block: 40px 48px; }
   .hero .stack { gap: 22px; }
+  .hero .col { max-width: none; }          /* the headline needs the full width; running text stays readable */
+  .hero .lead, .hero .note { max-width: 68ch; }
   .platforms { display: flex; gap: 10px 18px; flex-wrap: wrap; font-size: 0.95rem; color: var(--muted); }
   .platforms span::before { content: "✓ "; color: var(--ok); font-weight: 700; }
 
