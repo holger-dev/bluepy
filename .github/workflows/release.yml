@@ -77,6 +77,10 @@ jobs:
           rm -f "$RUNNER_TEMP/cert.p12"
           echo "CSC_KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
           security find-identity -v -p codesigning "$KEYCHAIN"
+          if ! security find-identity -v -p codesigning "$KEYCHAIN" | grep -q "Developer ID Application"; then
+            echo "::error::CSC_LINK contains no 'Developer ID Application' certificate (an 'Apple Development' certificate cannot be notarized). Export the Developer ID certificate with its private key as .p12 and update the secret."
+            exit 1
+          fi
 
       - name: Package (macOS, signed + notarized)
         if: runner.os == 'macOS'
