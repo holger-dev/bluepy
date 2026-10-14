@@ -3,8 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "description": "BluePy – a teaching IDE for Python with class diagram, object bench and interactive method calls",
+  "homepage": "https://bluepy.heidkamp.dev",
+  "author": {
+    "name": "Holger Heidkamp",
+    "email": "holger@heidkamp.dev"
+  },
   "license": "GPL-3.0-only",
-  "author": "Holger Heidkamp",
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",

@@ -31,9 +31,11 @@ npmRebuild: false
 mac:
   category: public.app-category.developer-tools
   icon: build/icon.png
+  # Two DMGs (Apple Silicon + Intel) instead of one universal build: merging the two
+  # architectures chokes on the thousands of unpacked Pyright files ("pattern is too long").
   target:
     - target: dmg
-      arch: [universal]
+      arch: [arm64, x64]
   hardenedRuntime: true
   gatekeeperAssess: false
   entitlements: build/entitlements.mac.plist
@@ -42,7 +44,7 @@ mac:
   # in the environment (the Release workflow does); electron-builder picks them up.
   notarize: true
 dmg:
-  artifactName: ${productName}-${version}-mac.${ext}
+  artifactName: ${productName}-${version}-mac-${arch}.${ext}
 
 win:
   icon: build/icon.png
@@ -62,6 +64,7 @@ portable:
 linux:
   icon: build/icon.png
   category: Development
+  maintainer: Holger Heidkamp <holger@heidkamp.dev>
   target:
     - deb
     - AppImage
